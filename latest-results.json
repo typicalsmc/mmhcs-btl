@@ -1,0 +1,82 @@
+{
+  "hostname": "login.payroll.test",
+  "scope": "127.0.0.1, TLS 1.3, kho tin cậy riêng",
+  "issuer": "CN=Lab Intermediate CA",
+  "serial": "0x3a69ed55e22e38811a7cdb5ded768934fa59e110",
+  "fingerprint": "58f750979eef8be5f2efe73bf11f02d156e1c2a566dbd4bdf15e8f898efd25b9",
+  "folder": "C:\\Users\\typical\\Documents\\ChatGPT\\mmhcs-btl\\runs\\d9e9f3f6065b",
+  "results": [
+    {
+      "accepted": false,
+      "verify_code": 20,
+      "detail": "unable to get local issuer certificate",
+      "id": "untrusted",
+      "title": "Root CA chưa được tin cậy",
+      "expected": false,
+      "passed": true,
+      "explain": "Client chỉ tin CA trong kho riêng của lab.",
+      "crl_enabled": false
+    },
+    {
+      "accepted": true,
+      "protocol": "TLSv1.3",
+      "cipher": "TLS_AES_256_GCM_SHA384",
+      "detail": "PKI lab OK",
+      "id": "forged",
+      "title": "Chứng chỉ giả vượt xác minh",
+      "expected": true,
+      "passed": true,
+      "explain": "Khóa CA trung gian bị lộ ký được leaf có SAN và chuỗi hợp lệ.",
+      "crl_enabled": false
+    },
+    {
+      "accepted": false,
+      "verify_code": 62,
+      "detail": "Hostname mismatch, certificate is not valid for 'other.payroll.test'.",
+      "id": "hostname",
+      "title": "Tên miền sai bị từ chối",
+      "expected": false,
+      "passed": true,
+      "explain": "Chữ ký hợp lệ vẫn không thay thế kiểm tra hostname.",
+      "crl_enabled": false
+    },
+    {
+      "accepted": false,
+      "verify_code": 23,
+      "detail": "certificate revoked",
+      "id": "revoked",
+      "title": "Bật kiểm tra CRL và thu hồi CA",
+      "expected": false,
+      "passed": true,
+      "explain": "Root CA ký CRL thu hồi Intermediate với lý do cACompromise.",
+      "crl_enabled": true
+    },
+    {
+      "accepted": true,
+      "protocol": "TLSv1.3",
+      "cipher": "TLS_AES_256_GCM_SHA384",
+      "detail": "PKI lab OK",
+      "id": "unchecked",
+      "title": "Tắt kiểm tra thu hồi",
+      "expected": true,
+      "passed": true,
+      "explain": "Có CRL trong trust bundle chưa đủ. Client phải thực thi kiểm tra.",
+      "crl_enabled": false
+    },
+    {
+      "accepted": true,
+      "protocol": "TLSv1.3",
+      "cipher": "TLS_AES_256_GCM_SHA384",
+      "detail": "PKI lab OK",
+      "id": "recovery",
+      "title": "Thay CA trung gian và cấp lại",
+      "expected": true,
+      "passed": true,
+      "explain": "Chuỗi mới hợp lệ, CA cũ vẫn nằm trong CRL của Root.",
+      "crl_enabled": true
+    }
+  ],
+  "all_passed": true,
+  "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+  "created_at": "2026-11-04T12:09:23.827799+00:00"
+}

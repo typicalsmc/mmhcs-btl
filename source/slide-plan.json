@@ -1,0 +1,282 @@
+[
+  {
+    "p": 2,
+    "k": "CHƯƠNG 1 · TỔNG QUAN SSL/TLS",
+    "title": "TLS BẢO VỆ KÊNH TRUYỀN",
+    "image": "MAHZ3Vz_bIk",
+    "aspect": 1.6149532710280374,
+    "b": [
+      "TLS là tầng đệm giữa ứng dụng và giao vận. Ba mục tiêu: bí mật, toàn vẹn và xác thực.",
+      "SSL 2.0/3.0 và TLS 1.0/1.1 đã lỗi thời. TLS 1.2 hỗ trợ AEAD. TLS 1.3 tinh gọn bắt tay còn 1-RTT.",
+      "Record phân mảnh và bảo vệ dữ liệu. Handshake thỏa thuận khóa, Alert báo lỗi. HTTPS: 443; IMAPS: 993; SMTPS: 465."
+    ]
+  },
+  {
+    "p": 12,
+    "k": "CHƯƠNG 3",
+    "title": "HẠ TẦNG PKI VÀ CHỮ KÝ SỐ",
+    "b": [
+      "3.1  Hàm băm và chữ ký số\nNền tảng bảo vệ tính toàn vẹn, xác thực nguồn gốc.",
+      "3.2  Chứng thư và chuỗi tin cậy\nX.509 kết nối danh tính với khóa công khai.",
+      "3.3  Xác minh để chống MitM\nTrao đổi khóa cần đi kèm xác thực đối tác.",
+      "3.4  Thu hồi chứng thư\nCRL, OCSP và OCSP Stapling."
+    ]
+  },
+  {
+    "p": 13,
+    "k": "3.1 · NỀN TẢNG MẬT MÃ HỌC",
+    "title": "SHA-256 VÀ BẢN TÓM LƯỢC",
+    "b": [
+      "Đầu vào có độ dài tùy ý, đầu ra cố định 256 bit, tương đương 32 byte.",
+      "Hiệu ứng thác lũ: đổi một bit đầu vào làm thay đổi khoảng một nửa số bit đầu ra, xét trung bình."
+    ]
+  },
+  {
+    "p": 14,
+    "k": "3.1 · HÀM BĂM MẬT MÃ",
+    "title": "BA TÍNH CHẤT CỦA HÀM BĂM",
+    "b": [
+      "Kháng tiền ảnh\nBiết H(m), khó tìm một đầu vào m phù hợp.",
+      "Kháng tiền ảnh thứ hai\nBiết m₁, khó tìm m₂ khác m₁ nhưng có cùng mã băm.",
+      "Kháng va chạm\nKhó tìm bất kỳ hai thông điệp phân biệt có cùng mã băm."
+    ]
+  },
+  {
+    "p": 15,
+    "k": "3.1 · CHỮ KÝ SỐ",
+    "title": "BĂM TRƯỚC, KÝ SAU",
+    "image": "MAHZET1Ds0Q",
+    "aspect": 1.6893203883495145,
+    "b": [
+      "Bên ký băm dữ liệu rồi ký bản tóm lược bằng khóa riêng. Bên nhận dùng khóa công khai để xác minh.",
+      "RSA thực tế cần cơ chế đệm và mã hóa chuẩn như RSA-PSS. Công thức S = Mᵈ mod n chỉ minh họa phép toán nền tảng.",
+      "Trong TLS, chữ ký xác thực bên tham gia và ràng buộc nội dung bắt tay. Chữ ký không mã hóa dữ liệu ứng dụng."
+    ]
+  },
+  {
+    "p": 16,
+    "k": "3.2 · CHỨNG THƯ X.509",
+    "title": "DANH TÍNH GẮN VỚI KHÓA",
+    "image": "MAHZErsukOY",
+    "aspect": 1.2875,
+    "b": [
+      "SAN khai báo tên miền hoặc IP. Client đối chiếu tên truy cập với SAN của chứng chỉ máy chủ.",
+      "Subject Public Key Info chứa khóa công khai. Basic Constraints, Key Usage và EKU giới hạn vai trò của chứng chỉ.",
+      "Issuer, thời hạn và chữ ký phục vụ xác minh chuỗi. AIA/CDP có thể chỉ dẫn nơi lấy CA, OCSP hoặc CRL."
+    ]
+  },
+  {
+    "p": 17,
+    "k": "3.2 · CHUỖI TIN CẬY",
+    "title": "ROOT, INTERMEDIATE VÀ LEAF",
+    "image": "MAHZEidbkPE",
+    "aspect": 1.3420593368237348,
+    "b": [
+      "Root CA\nĐiểm tin cậy do client cấu hình. Chứng chỉ tự ký chỉ được tin khi có trong trust store phù hợp.",
+      "Intermediate CA\nCA được cấp trên ủy quyền. Có thể thu hồi nhánh này nếu khóa trung gian bị lộ.",
+      "Leaf Certificate\nChứng chỉ dịch vụ, chứa SAN và khóa công khai. CA:FALSE, không được dùng làm CA cấp chứng chỉ khác."
+    ]
+  },
+  {
+    "p": 18,
+    "k": "3.3 · ĐIỂM YẾU VÀ XÁC MINH",
+    "title": "ECDH CẦN ĐI KÈM XÁC THỰC",
+    "b": [
+      "Nguy cơ MitM\nECDH không xác thực có thể bị xen giữa thành hai phiên riêng với kẻ tấn công.",
+      "Kiểm tra chữ ký và chuỗi\nXác minh từng chứng chỉ, giới hạn CA và mục đích sử dụng.",
+      "Đối chiếu nguồn tin cậy\nChuỗi phải kết thúc ở Root CA được client tin và còn trong thời hạn.",
+      "Kiểm tra tên miền và thu hồi\nĐối chiếu SAN. Áp dụng chính sách CRL/OCSP theo cấu hình client."
+    ]
+  },
+  {
+    "p": 19,
+    "k": "3.4 · THU HỒI CHỨNG THƯ",
+    "title": "CRL VÀ OCSP",
+    "b": [
+      "CRL\nCA ký danh sách serial bị thu hồi. Client tải và kiểm tra trong thời hạn hiệu lực của CRL.",
+      "OCSP\nClient truy vấn trạng thái chứng chỉ: good, revoked hoặc unknown.",
+      "Đánh đổi của CRL\nDung lượng và độ mới phụ thuộc danh sách, chu kỳ phát hành và cache.",
+      "Đánh đổi của OCSP\nThêm phụ thuộc mạng và ảnh hưởng riêng tư. Khi không có trạng thái, hành vi tùy chính sách client."
+    ]
+  },
+  {
+    "p": 20,
+    "k": "3.4 · OCSP STAPLING",
+    "title": "ĐÍNH KÈM TRẠNG THÁI TRONG TLS",
+    "image": "MAHZE0SGoKU",
+    "aspect": 1.3950413223140496,
+    "b": [
+      "Server lấy phản hồi OCSP có chữ ký từ CA và gửi kèm trong bắt tay TLS. Client kiểm tra chữ ký và thời hạn phản hồi.",
+      "Giảm truy vấn trực tiếp từ client tới CA, qua đó giảm độ trễ bổ sung và hạn chế lộ lịch sử truy cập cho responder.",
+      "Hiệu quả phụ thuộc hỗ trợ của CA, server và client. Cache, độ mới và chính sách xử lý lỗi vẫn cần kiểm thử."
+    ]
+  },
+  {
+    "p": 21,
+    "k": "CHƯƠNG 4",
+    "title": "TLS TRONG HỆ THỐNG THỰC TẾ",
+    "b": [
+      "4.1  HTTPS một chiều\nXác thực máy chủ, ACME, SNI và pinning.",
+      "4.2  mTLS và Zero Trust\nHai đầu chứng minh danh tính bằng chứng chỉ.",
+      "4.3  VPN và IoT\nKênh truy cập từ xa, MQTTS và DTLS.",
+      "4.4  Kiến trúc hạ tầng\nTermination, Passthrough và lựa chọn theo luồng."
+    ]
+  },
+  {
+    "p": 22,
+    "k": "4.1 · HTTPS MỘT CHIỀU",
+    "title": "SERVER CHỨNG MINH DANH TÍNH",
+    "b": [
+      "Bắt tay TLS 1.3\nClientHello và key_share; ServerHello; chứng chỉ, CertificateVerify và Finished trong phần mã hóa.",
+      "Client xác minh\nChuỗi CA, thời hạn, SAN, chữ ký và mục đích sử dụng. Thu hồi tuân theo chính sách nền tảng.",
+      "Danh tính người dùng\nHTTPS thông thường không yêu cầu chứng chỉ client. Tài khoản, OTP nằm ở tầng ứng dụng.",
+      "DV, OV và EV\nKhác mức xác minh chủ sở hữu. Không quyết định độ mạnh mã hóa của phiên TLS."
+    ]
+  },
+  {
+    "p": 23,
+    "k": "4.1 · QUẢN LÝ CHỨNG CHỈ",
+    "title": "TỰ ĐỘNG HÓA VỚI ACME",
+    "b": [
+      "Quy trình ACME\nTạo order, hoàn thành challenge, gửi CSR, nhận chứng chỉ và tự động gia hạn.",
+      "Xác minh tên miền\nHTTP-01 dùng cổng 80. DNS-01 dùng bản ghi TXT và hỗ trợ wildcard. TLS-ALPN-01 dùng cổng 443.",
+      "Vận hành liên tục\nTheo dõi lỗi gia hạn, kiểm tra chuỗi mới và nạp lại cấu hình dịch vụ.",
+      "Điểm cần bảo vệ\nThông tin xác thực DNS, khóa riêng và quyền cấp phát. Chứng chỉ ngắn hạn càng cần giám sát tốt."
+    ]
+  },
+  {
+    "p": 24,
+    "k": "4.1 · SNI VÀ PINNING",
+    "title": "ĐỊNH TUYẾN VÀ RÀNG BUỘC TIN CẬY",
+    "b": [
+      "SNI\nTên miền trong ClientHello giúp server chọn chứng chỉ trên cùng IP và cổng 443.",
+      "Quyền riêng tư\nSNI thông thường nhìn thấy ở mạng. ECH che ClientHello bên trong, ảnh hưởng thiết kế định tuyến theo SNI.",
+      "Pinning\nỨng dụng kiểm tra chứng chỉ hoặc hash khóa công khai đã ghim, bên cạnh các kiểm tra TLS cần thiết.",
+      "Chi phí vận hành\nPhải có pin dự phòng và kế hoạch đổi khóa. Ghim quá chặt có thể làm ứng dụng mất kết nối khi gia hạn."
+    ]
+  },
+  {
+    "p": 25,
+    "k": "4.2 · XÁC THỰC HAI CHIỀU",
+    "title": "mTLS: HAI ĐẦU CÙNG XÁC MINH",
+    "image": "MAHZ3YdQnCQ",
+    "aspect": 1.7913486005089059,
+    "b": [
+      "Server gửi CertificateRequest. Client xác minh server rồi gửi Certificate, CertificateVerify và Finished của mình.",
+      "Hai bên chứng minh sở hữu khóa riêng tương ứng với chứng chỉ. Phù hợp microservices, API đối tác và hệ thống nội bộ.",
+      "Zero Trust cần thêm phân quyền, quản lý danh tính và chính sách truy cập. mTLS cung cấp xác thực kênh, không tự quyết định quyền."
+    ]
+  },
+  {
+    "p": 26,
+    "k": "4.3 · VPN VÀ IoT",
+    "title": "TLS TRONG TRUY CẬP VÀ THIẾT BỊ",
+    "b": [
+      "SSL/TLS VPN\nTạo kênh truy cập từ xa dựa trên TLS. Cần MFA, phân quyền và quản lý thiết bị đầu cuối.",
+      "Phân biệt VPN\nWireGuard dùng giao thức mật mã riêng. IPsec bảo vệ ở tầng IP. Chọn theo môi trường và yêu cầu vận hành.",
+      "MQTTS\nMQTT qua TLS thường dùng cổng 8883. Xác minh broker, bảo vệ khóa trên thiết bị.",
+      "DTLS\nCung cấp bảo vệ cho datagram trên UDP. Cần cân nhắc bộ nhớ, pin, mất gói và vòng đời chứng chỉ."
+    ]
+  },
+  {
+    "p": 27,
+    "k": "4.4 · KIẾN TRÚC TLS",
+    "title": "ĐIỂM NÀO ĐƯỢC THẤY BẢN RÕ?",
+    "image": "MAHZ3U52YzA",
+    "aspect": 1.1002949852507375,
+    "b": [
+      "Termination\nBiên kết thúc TLS để áp WAF, cache và định tuyến Layer 7. Biên giữ khóa và đọc được nội dung.",
+      "Mã hóa lại\nThiết lập TLS từ biên tới backend, đồng thời xác minh chứng chỉ backend. Offloading thuần để đoạn sau ở bản rõ.",
+      "Passthrough\nBiên chuyển byte TLS ở Layer 4. Backend giữ khóa và giải mã, có thể xác minh trực tiếp chứng chỉ client."
+    ]
+  },
+  {
+    "p": 28,
+    "k": "4.4 · LỰA CHỌN KIẾN TRÚC",
+    "title": "CHỌN THEO YÊU CẦU KIỂM SOÁT",
+    "b": [
+      "Cần WAF và định tuyến HTTP\nChọn Termination và mã hóa lại. Bảo vệ khóa tại biên, chặn đường truy cập tắt vào backend.",
+      "Backend phải tự xác thực mTLS\nPassthrough giữ phiên TLS tới backend. Cần tự động hóa chứng chỉ trên từng máy.",
+      "Chuyển danh tính qua header\nBackend chỉ tin biên hợp lệ. Biên phải xóa hoặc ghi đè header danh tính do client gửi.",
+      "Giới hạn cần chấp nhận\nPassthrough không cho WAF tại biên đọc nội dung. Không mô hình nào tự bảo đảm tuân thủ."
+    ]
+  },
+  {
+    "p": 29,
+    "k": "4.4 · TÌNH HUỐNG CỦA NHÓM",
+    "title": "MỘT CỔNG 443, BA NHÓM LƯU LƯỢNG",
+    "image": "MAHZ3XYJKYc",
+    "aspect": 1.3423728813559321,
+    "b": [
+      "Website bán hàng\nTermination, WAF và mã hóa lại để hỗ trợ cache, lọc yêu cầu và quản lý chứng chỉ tập trung.",
+      "API đối tác\nmTLS tại biên, giới hạn tốc độ, mã hóa lại. Backend chỉ tin danh tính do biên đã xác minh.",
+      "Dịch vụ thanh toán\nPassthrough nếu cần giảm điểm thấy bản rõ. Bù WAF sau giải mã, quản lý chứng chỉ phân tán và xem xét ECH."
+    ]
+  },
+  {
+    "p": 30,
+    "k": "CHƯƠNG 5 · MÔ PHỎNG SỰ CỐ",
+    "title": "LỘ KHÓA RIÊNG CA TRUNG GIAN",
+    "b": [
+      "Giả định trong lab\nRoot CA còn an toàn. Kẻ tấn công có chứng chỉ và khóa riêng của Intermediate CA.",
+      "Hành động mô phỏng\nKý một leaf mới cho login.payroll.test bằng khóa trung gian bị lộ.",
+      "Điều kiện để client chấp nhận\nClient tin Root CA, SAN và chuỗi hợp lệ, chưa chặn CA bằng trạng thái thu hồi.",
+      "Giới hạn tác động\nCó thể giả mạo danh tính trong kết nối mới. Không tự suy ra khóa phiên TLS 1.3 lịch sử."
+    ]
+  },
+  {
+    "p": 31,
+    "k": "5.2 · DEMO THỰC TẾ",
+    "title": "TỪ CHỨNG CHỈ GIẢ TỚI BẮT TAY",
+    "b": [
+      "01  Tạo PKI riêng\nRoot CA, Intermediate CA và chứng chỉ máy chủ trong thư mục lab.",
+      "02  Dùng khóa CA bị lộ\nPhát hành leaf có SAN login.payroll.test. Không cần lấy khóa Root CA.",
+      "03  Bắt tay trên loopback\nTLS 1.3, chỉ 127.0.0.1. Client dùng trust bundle riêng, không cài CA vào hệ điều hành.",
+      "04  Đối chiếu kết quả\nGhi JSON, serial, fingerprint, cipher và lỗi xác minh của từng kịch bản."
+    ]
+  },
+  {
+    "p": 32,
+    "k": "5.2 · KẾT QUẢ ĐÃ CHẠY",
+    "title": "CHỮ KÝ HỢP LỆ VẪN CÓ THỂ GIẢ",
+    "b": [
+      "Chưa tin Root CA\nClient từ chối: unable to get local issuer certificate, mã 20.",
+      "Tin Root CA và đúng SAN\nChứng chỉ giả được chấp nhận. Bắt tay TLS 1.3 dùng AES-256-GCM.",
+      "Đổi hostname\nClient từ chối: hostname mismatch, mã 62.",
+      "Thu hồi và bật kiểm tra CRL\nRoot CA thu hồi Intermediate. Client từ chối: certificate revoked, mã 23."
+    ]
+  },
+  {
+    "p": 33,
+    "k": "5.2 · BÀI HỌC TỪ DEMO",
+    "title": "THU HỒI CẦN CLIENT THỰC THI",
+    "b": [
+      "CRL có trong bundle\nNếu tắt kiểm tra thu hồi, client trong lab vẫn chấp nhận chứng chỉ giả.",
+      "Bật kiểm tra toàn chuỗi\nVERIFY_CRL_CHECK_CHAIN kiểm tra trạng thái cả leaf và CA trung gian.",
+      "Phục hồi bằng khóa mới\nThay Intermediate, cấp lại leaf và giữ CRL của CA cũ. Kết nối chuỗi mới thành công.",
+      "Phạm vi kết luận\nKết quả phụ thuộc cấu hình client. Cache, CRL/OCSP và chính sách trình duyệt có thể khác."
+    ]
+  },
+  {
+    "p": 34,
+    "k": "5.3 · ỨNG PHÓ VÀ PHỤC HỒI",
+    "title": "CÔ LẬP, THU HỒI, CẤP LẠI",
+    "b": [
+      "Cô lập và điều tra\nDừng phát hành, bảo toàn log, xác định khóa, thời điểm và hệ thống bị ảnh hưởng.",
+      "Thu hồi từ CA cha sạch\nIntermediate bị lộ: Root ký CRL với cACompromise. Không dựa vào CRL do khóa bị lộ ký.",
+      "Xây chuỗi mới\nTạo khóa CA mới trong môi trường sạch, cấp lại leaf và kiểm thử mọi client.",
+      "Cập nhật và giám sát\nPhân phối trạng thái thu hồi, làm mới cache. Nếu Root bị lộ, cần cập nhật trust store và thay gốc."
+    ]
+  },
+  {
+    "p": 35,
+    "k": "KẾT LUẬN VÀ TÀI LIỆU",
+    "title": "BẢO VỆ TLS TỪ KHÓA ĐẾN VẬN HÀNH",
+    "b": [
+      "Mật mã và giao thức\nECDHE, chữ ký và AEAD phối hợp bảo vệ phiên. Phân biệt trao đổi khóa với xác thực.",
+      "PKI và danh tính\nChuỗi tin cậy, SAN và kiểm tra trạng thái chứng thư quyết định client có tin đúng đối tác.",
+      "Triển khai và demo\nChọn điểm giải mã phù hợp. Bảo vệ khóa CA, tự động hóa chứng chỉ và kiểm thử thu hồi.",
+      "Nguồn chính\nBáo cáo BTL của nhóm; RFC 8446, RFC 5280, RFC 6960, RFC 6066; tài liệu xác minh OpenSSL."
+    ]
+  }
+]

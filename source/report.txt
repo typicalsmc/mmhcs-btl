@@ -1,0 +1,913 @@
+HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG
+KHOA AN TOÀN THÔNG TIN
+
+BÁO CÁO BÀI TẬP LỚN
+HỌC PHẦN: MẬT MÃ HỌC CƠ SỞ
+ĐỀ TÀI
+GIAO THỨC SSL/TLS, CƠ SỞ MẬT MÃ VÀ HẠ TẦNG PKI
+HÀ NỘI 2026
+
+MỤC LỤC
+CHƯƠNG 1. TỔNG QUAN VỀ SSL/TLS VÀ KIẾN TRÚC GIAO THỨC5
+1.1 Giới thiệu chung TLS5
+1.1.1 Khái niệm và vị trí giữa tầng Giao vận và tầng Ứng dụng5
+1.1.2 Ba yêu cầu an toàn5
+1.1.3 Ánh xạ giao thức ứng dụng sang cổng bảo mật (HTTPS 443, SMTPS 465/STARTTLS 587, IMAPS 993)7
+1.2 Lịch sử phát triển TLS8
+1.2.1 SSL 2.0 và 3.0: lỗi thiết kế, Truncation Attack, POODLE8
+1.2.2 TLS 1.0 và 1.1: BEAST, Lucky Thirteen, bị khai tử theo RFC 89968
+1.2.3 TLS 1.2: SHA-2, AEAD, phiên bản phổ biến nhất9
+1.2.4 TLS 1.3: loại bỏ thuật toán yếu, 1-RTT, bắt buộc PFS9
+1.2.5 Bảng tổng hợp các phiên bản (năm, RFC, điểm yếu, cải tiến)9
+1.3 Kiến trúc phân tầng (shim layer) TLS10
+1.3.1 Nguyên lý tầng đệm: ứng dụng chỉ dùng socket chuẩn10
+1.3.2 Tầng Record Protocol10
+1.3.3 Các giao thức con12
+CHƯƠNG 2. CƠ SỞ MẬT MÃ, QUY TRÌNH HANDSHAKE VÀ CIPHER SUITE14
+2.1 Hệ mật mã lai (Hybrid Cryptosystem) TLS14
+2.1.1 Vai trò của mật mã bất đối xứng14
+2.1.2 Vai trò của mật mã đối xứng14
+2.2 Trao đổi khóa TLS14
+2.2.1 Trao đổi khóa bằng RSA (Pre-Master Secret 48 byte)14
+2.2.3 Trao đổi khóa ECDHE15
+2.2.4 Client Random và Server Random16
+2.2.5 Khôi phục phiên: Session ID (stateful) và Session Ticket/PSK (stateless)16
+2.2.6 Hàm phái sinh khóa HKDF (RFC 5869)16
+2.3 Quy trình Handshake TLS17
+2.3.1 TLS 1.2 (2-RTT)17
+2.3.2 TLS 1.3 (1-RTT)18
+2.3.4 Bảng so sánh TLS 1.2 và TLS 1.319
+2.4 Các nhóm thuật toán mật mã trong TLS20
+2.4.1 Trao đổi khóa20
+2.4.2 Chữ ký số và xác thực20
+2.4.3 Mã hóa đối xứng21
+2.5 Cipher Suite và cơ chế AEAD TLS21
+2.5.2 Cipher Suite tinh gọn của TLS 1.322
+2.5.3 MAC-then-Encrypt trên CBC và tấn công Padding Oracle22
+2.5.5 Dấu vết của các cuộc tấn công vào phiên bản cũ23
+CHƯƠNG 3. HẠ TẦNG KHÓA CÔNG KHAI (PKI) VÀ CHỮ KÝ SỐ24
+3.1 Nền tảng mật mã học: Hàm băm và Chữ ký số24
+3.1.1 Hàm băm mật mã (SHA-256) và bản tóm lược (Message Digest)24
+3.1.2 Chữ ký số RSA và cơ chế ký tối ưu24
+3.2 Nhận diện và Chuỗi tin cậy (Chain of Trust)25
+3.2.1 Cấu trúc Chứng thư số X.509 v3 (RFC 5280)25
+3.2.2 Cấu trúc Chuỗi tin cậy (Chain of Trust)26
+3.3 Các điểm yếu có thể bị lợi dụng để tấn công27
+3.3.1 Giới hạn của ECDH (Chỉ chống nghe lén thụ động)27
+3.3.2 Tấn công Xen vào giữa (Man-in-the-Middle - MitM)27
+3.3.3 Quy trình 4 bước thẩm định tại Máy khách (Chống MitM)28
+3.4 Cơ chế thu hồi chứng thư số (Certificate Revocation)28
+3.4.1 Cơ chế CRL (Chuẩn RFC 5280)28
+3.4.2 Cơ chế OCSP (RFC 6960)28
+3.4.3 Giải pháp tối ưu: OCSP Stapling (Chuẩn RFC 6066)29
+3.4.4 So sánh tổng hợp các cơ chế thu hồi29
+CHƯƠNG 4. CÁC MÔ HÌNH ỨNG DỤNG THỰC TẾ CỦA SSL/TLS30
+4.1 HTTPS xác thực một chiều TLS30
+4.1.1 Kịch bản: Website30
+4.1.2 Chứng chỉ Public CA và giao thức ACME32
+4.1.3 SNI (RFC 6066) và Virtual Hosting34
+4.1.4 SSL Pinning34
+4.2 Xác thực hai chiều (mTLS) và Zero Trust TLS35
+4.2.1 Kịch bản: Microservices/Kubernetes/Service Mesh, B2B tài chính, Bastion Host35
+4.2.2 Quy trình mTLS qua 7 bước36
+4.2.3 Hạn chế của bảo vệ theo chu vi (Perimeter Security) và Lateral Movement37
+4.2.4 Nguyên tắc “không bao giờ tin tưởng, luôn xác minh” và vai trò của mTLS38
+4.3 SSL/TLS VPN, IoT và công nghiệp TLS39
+4.3.1 SSL/TLS VPN, WireGuard và IPsec: so sánh các giải pháp VPN39
+4.3.2 IoT: MQTTS (cổng 8883) và DTLS (RFC 6347)40
+4.4 TLS Termination và TLS Passthrough42
+4.4.1 TLS Termination/Offloading42
+4.4.2 TLS Passthrough (Layer 4, định tuyến theo SNI)43
+4.4.3 Tình huống lựa chọn kiến trúc45
+CHƯƠNG 5. MÔ PHỎNG SỰ CỐ LỘ KHÓA RIÊNG CA47
+5.1 Kịch bản sự cố và hậu quả47
+5.2 Mô phỏng cấp chứng chỉ giả trong lab47
+5.3 Quy trình ứng phó và thu hồi49
+TÀI LIỆU THAM KHẢO BỔ SUNG50
+
+
+CHƯƠNG 1. TỔNG QUAN VỀ SSL/TLS VÀ KIẾN TRÚC GIAO THỨC
+1.1 Giới thiệu chung TLS
+1.1.1 Khái niệm và vị trí giữa tầng Giao vận và tầng Ứng dụng
+   Transport Layer Security (TLS) cùng với tiền thân của nó là Secure Sockets Layer (SSL) là giao thức mật mã tiêu chuẩn hóa được thiết kế nhằm bảo mật kênh truyền thông trên mạng máy tính. 
+   Trong mô hình tham chiếu OSI 7 tầng hoặc mô hình TCP/IP, TLS hoạt động theo cơ chế tầng đệm (Shim Layer) nằm giữa Tầng Giao vận và Tầng Ứng dụng 
+Sơ đồ 1.1: Vị trí của TLS Shim Layer trong mô hình phân tầng TCP/IP
+     Vị trí tầng đệm này cho phép TLS đóng vai trò như một socket bảo mật (Secure Socket). Các ứng dụng ở tầng trên có thể sử dụng các hàm API socket tiêu chuẩn (như OpenSSL, BoringSSL) để truyền nhận dữ liệu mà không cần sửa đổi cấu trúc gói tin tầng ứng dụng. 
+1.1.2 Ba yêu cầu an toàn
+   TLS thiết lập một kênh truyền an toàn đáp ứng trọn vẹn 3 mục tiêu an ninh mạng cốt lõi: 
+Sơ đồ 1.2: Ba trụ cột an toàn thông tin của giao thức TLS 
+  
+◦ Bí mật (AES, ChaCha20)
+   Đảm bảo dữ liệu truyền qua mạng không bị nghe lén (Eavesdropping). Dữ liệu được mã hóa bằng thuật toán mã hóa đối xứng khối (Block Cipher) hoặc mã hóa luồng (Stream Cipher) như AES (128/256 bit) chạy ở chế độ CBC/GCM, hoặc ChaCha20. 
+• Công thức mã hóa khối AES-CBC: 
+C_i = AES_K(P_i ⊕ C_{i-1})   [với C_0 = IV]  • C_i: Bản mã của khối thứ i; P_i: Bản rõ của khối thứ i. 
+• IV (Initialization Vector): Vector khởi tạo ngẫu nhiên cho từng Record. 
+• K: Khóa đối xứng được thương lượng bí mật trong quá trình Handshake. 
+◦ Toàn vẹn (AEAD, HMAC)
+   Đảm bảo dữ liệu không bị thay đổi, chèn thêm hoặc xóa bớt trên đường truyền bởi kẻ tấn công đứng giữa (MITM). Sử dụng hàm băm có khóa HMAC hoặc chế độ mã hóa gắn kèm xác thực AEAD. 
+• Công thức HMAC toán học: 
+HMAC(K, M) = H((K' ⊕ opad) || H((K' ⊕ ipad) || M))  
+• H: Hàm băm mã hóa an toàn (SHA-256, SHA-384). 
+• K': Khóa K được bổ sung byte 0x00 cho đủ kích thước khối của hàm băm. 
+• ipad = 0x3636...36, opad = 0x5C5C...5C (Inner/Outer Padding constants).   
+◦ Xác thực (RSA, ECDSA, X.509, mTLS)
+   Xác thực danh tính của Máy chủ (Server) và tùy chọn Xác thực Máy khách (mTLS) bằng cặp khóa bất đối xứng (RSA, ECDSA) kết hợp chứng thư số tiêu chuẩn X.509. 
+• Xác thực chữ ký số RSA: 
+   Ký: S ≡ (H(M))^d (mod N)  –>   Xác minh: H(M) ≡ S^e (mod N) 
+• Xác thực chữ ký số ECDSA trên đường cong elliptic E(F_p): 
+   u_1 = H(M) · s^{-1} (mod n),   u_2 = r · s^{-1} (mod n) 
+   (x_1, y_1) = u_1 · G + u_2 · Q_{public}   
+-->  Chữ ký hợp lệ nếu x_1 ≡ r (mod n) 
+1.1.3 Ánh xạ giao thức ứng dụng sang cổng bảo mật (HTTPS 443, SMTPS 465/STARTTLS 587, IMAPS 993)
+   Khi chuyển đổi từ giao thức văn bản thuần (Plaintext) sang giao thức bảo mật dùng TLS, hệ thống quy định các cổng TCP mặc định riêng biệt (Implicit TLS) hoặc thực hiện nâng cấp kênh truyền qua lệnh (Explicit TLS / STARTTLS): 
+
+Giao thức tầng ứng dụng 
+Cổng Plaintext 
+Cổng TLS bảo mật 
+Tên giao thức bảo mật 
+RFC tiêu chuẩn 
+HTTP 
+TCP 80 
+TCP 443 (Implicit TLS) 
+HTTPS 
+RFC 2818 / RFC 9110 
+SMTP 
+TCP 25 
+TCP 465 (Implicit SMTPS) TCP 587 (Explicit STARTTLS) 
+SMTPS / STARTTLS 
+RFC 8314 / RFC 3207 
+IMAP 
+TCP 143 
+TCP 993 (Implicit TLS) 
+IMAPS 
+RFC 8314 
+POP3 
+TCP 110 
+TCP 995 (Implicit TLS) 
+POP3S 
+RFC 8314 
+LDAP 
+TCP 389 
+TCP 636 (Implicit TLS) 
+LDAPS 
+RFC 4513 
+Bảng 1.1: Bảng ánh xạ các giao thức tầng ứng dụng sang cổng bảo mật TLS. 
+1.2 Lịch sử phát triển TLS
+Sơ đồ 1.3: Dòng thời gian tiến hóa của các phiên bản SSL/TLS 
+  
+1.2.1 SSL 2.0 và 3.0: lỗi thiết kế, Truncation Attack, POODLE
+• SSL 2.0 (1995): Bản phát hành đầu tiên ra công chúng bởi Netscape. Dính các lỗi thiết kế nghiêm trọng như không bảo vệ thông điệp Handshake (dễ bị tấn công downgrade), sử dụng chung khóa cho xác thực và mã hóa, hàm băm MD5 yếu. 
+• SSL 3.0 (1996): Tái thiết kế toàn bộ kiến trúc, bổ sung HMAC và hỗ trợ mở rộng. Tuy nhiên tồn tại 2 lỗ hổng kinh điển: 
+   1. Truncation Attack: Kẻ tấn công chèn cờ TCP FIN để đóng kết nối sớm. Do SSL 3.0 không yêu cầu ký điện tử thông điệp close_notify, phía nhận không thể phân biệt giữa kết nối bị đóng hợp lệ hay bị cắt ngang cố ý. 
+   2. Tấn công POODLE (CVE-2014-3566): Tấn công vào cơ chế CBC Padding của SSL 3.0. Kẻ tấn công MITM tráo đổi khối dữ liệu để giải mã từng byte Cookie/Session Token với xác suất 1/256 mỗi lần thử dựa trên công thức P_N = D_K(C_N) ⊕ C_{N-1}.  
+1.2.2 TLS 1.0 và 1.1: BEAST, Lucky Thirteen, bị khai tử theo RFC 8996
+• TLS 1.0 (1999 - RFC 2246): Chuyển giao quản lý từ Netscape sang IETF. Tồn tại lỗ hổng BEAST (CVE-2011-3389) khai thác cơ chế IV liên kết (Chained IV) trong CBC mode, trong đó IV_i = C_{i-1} của record trước. 
+• TLS 1.1 (2006 - RFC 4346): Khắc phục BEAST bằng cách bắt buộc dùng Explicit IV ngẫu nhiên riêng cho từng Record. Tuy nhiên bị ảnh hưởng bởi lỗ hổng Lucky Thirteen (CVE-2013-0169) khai thác tấn công kênh phụ độ trễ thời gian (Timing Attack) trong kiểm tra CBC Padding và MAC. 
+• Khai tử chính thức theo RFC 8996 (March 2021): IETF chính thức công bố RFC 8996, bắt buộc khai tử toàn bộ SSL 2.0, SSL 3.0, TLS 1.0 và TLS 1.1 trên hạ tầng Internet toàn cầu. 
+1.2.3 TLS 1.2: SHA-2, AEAD, phiên bản phổ biến nhất
+   TLS 1.2 (2008 - RFC 5246) là bước đột phá kỹ thuật mạnh mẽ nhất. Thay thế hàm băm kết hợp MD5/SHA-1 bằng họ hàm băm an toàn SHA-256 / SHA-384. Giới thiệu chính thức các tập thuật toán mã hóa gắn kèm xác thực AEAD (AES-GCM, AES-CCM), giải quyết triệt để các tấn công vào cơ chế MAC-then-Encrypt cũ.  
+1.2.4 TLS 1.3: loại bỏ thuật toán yếu, 1-RTT, bắt buộc PFS
+   TLS 1.3 (2018 - RFC 8446) được chuẩn hóa sau 28 bản draft nghiên cứu nghiêm ngặt: 
+   1. Loại bỏ hoàn toàn các thuật toán yếu: Loại bỏ mã hóa khối CBC, trao đổi khóa RSA tĩnh, RC4, MD5, SHA-1, Static Diffie-Hellman. 
+   2. Tối ưu hóa Handshake (1-RTT): Rút ngắn thời gian đàm phán bắt tay từ 2-RTT (TLS 1.2) xuống chỉ còn 1-RTT, đồng thời hỗ trợ chế độ 0-RTT Resumption (Early Data). 
+   3. Bắt buộc Perfect Forward Secrecy (PFS): Chỉ cho phép trao đổi khóa Diffie-Hellman tạm thời (ECDHE hoặc DHE). Nếu khóa bí mật của Server bị lộ trong tương lai, toàn bộ dữ liệu phiên đã lưu trữ trong quá khứ vẫn hoàn toàn an toàn.  
+1.2.5 Bảng tổng hợp các phiên bản (năm, RFC, điểm yếu, cải tiến)
+
+Phiên bản 
+Năm 
+RFC 
+Thuật toán tiêu biểu 
+Lỗ hổng / Điểm yếu chính 
+Cải tiến đột phá 
+SSL 2.0 
+1995 
+Netscape 
+RSA, MD5, RC4, DES 
+Rollback Attack, MAC yếu 
+Mã hóa thương mại đầu tiên 
+SSL 3.0 
+1996 
+Netscape 
+RSA, SHA-1, DES/3DES 
+POODLE, Truncation 
+Tách Record & Handshake 
+TLS 1.0 
+1999 
+RFC 2246 
+RSA, DH, HMAC-SHA1, AES 
+BEAST, CRIME 
+Chuẩn hóa IETF, nâng HMAC 
+TLS 1.1 
+2006 
+RFC 4346 
+RSA, DH, CBC Explicit IV 
+Lucky Thirteen, CRIME 
+Explicit IV chống BEAST 
+TLS 1.2 
+2008 
+RFC 5246 
+ECDHE, AES-GCM, SHA-256 
+Heartbleed (extension) 
+Hỗ trợ AEAD, SHA-256 
+TLS 1.3 
+2018 
+RFC 8446 
+ECDHE/DHE, AES-GCM, ChaCha20 
+0-RTT Replay Attack 
+Handshake 1-RTT, bắt buộc PFS 
+Bảng 1.2: Bảng so sánh tổng quan các phiên bản giao thức SSL/TLS.  
+1.3 Kiến trúc phân tầng (shim layer) TLS
+1.3.1 Nguyên lý tầng đệm: ứng dụng chỉ dùng socket chuẩn
+    Kiến trúc phân tầng đệm (Shim Layer) cho phép tích hợp bảo mật một cách trong suốt (transparent) đối với các giao thức tầng ứng dụng. 
+Sơ đồ 1.4: Luồng xử lý dữ liệu qua kiến trúc Tầng đệm (Shim Layer) của TLS   
+    Ứng dụng chỉ cần khởi tạo kết nối qua thư viện mật mã (như OpenSSL API) và gọi các hàm socket chuẩn như SSL_read() và SSL_write(). Mọi thao tác cắt đoạn, tính mã xác thực, mã hóa và truyền qua kết nối TCP bên dưới đều do TLS tự động đảm nhiệm. 
+1.3.2 Tầng Record Protocol
+   Tầng Record Protocol là tầng thấp nhất trong kiến trúc TLS, chịu trách nhiệm đóng gói, mã hóa và đảm bảo an toàn dữ liệu trước khi chuyển xuống tầng TCP. 
+Sơ đồ 1.5: Quy trình xử lý dữ liệu từng bước tại tầng TLS Record Protocol  
+◦ Phân mảnh (tối đa 16.384 byte)
+   Dữ liệu từ tầng ứng dụng được chia thành các đoạn (Record Fragment) nhỏ có kích thước tối đa L_max = 2^{14} bytes = 16.384 bytes (16 KB). 
+◦ Nén dữ liệu (phải tắt, tấn công CRIME)
+   TLS từng hỗ trợ tính năng nén ở tầng Record (dùng thuật toán DEFLATE). Tuy nhiên lỗ hổng CRIME (CVE-2012-4929) cho phép kẻ tấn công quan sát tỷ lệ nén để đoạt Session Cookie. Do đó, tính năng nén ở tầng TLS bắt buộc phải TẮT vĩnh viễn 
+◦ Mã hóa và bảo vệ toàn vẹn (AEAD, thẻ xác thực 16 byte)
+   Sử dụng chế độ AEAD (AES-GCM, ChaCha20-Poly1305). Dữ liệu payload được mã hóa và tạo kèm Thẻ xác thực (Authentication Tag) 16 byte (128 bit): 
+Ciphertext, Tag = AEAD-Encrypt_{K_write}(Nonce, 
+Header_{5B} || SeqNum_{8B}, Plaintext) 
+◦ Đóng gói Record Header 5 byte (Content Type, Version, Length)
+   Mọi gói tin TLS Record truyền trên mạng đều bắt đầu bằng Record Header cố định 5 byte: 
+Sơ đồ 1.6: Cấu trúc các trường dữ liệu trong TLS Record Header 5 byte    
+• Byte 0: Content Type (1 byte): 0x14 (20): ChangeCipherSpec, 0x15 (21): Alert, 0x16 (22): Handshake, 0x17 (23): Application Data. • Byte 1–2: Legacy Record Version (2 byte): 0x0301 (TLS 1.0), 0x0302 (TLS 1.1), 0x0303 (TLS 1.2 / TLS 1.3 - trong TLS 1.3 cố định 0x0303 để tương thích Middlebox). • Byte 3–4: Length (2 byte): Độ dài phần dữ liệu mã hóa đằng sau Header (uint16, tối đa 16.384 + overhead). 
+
+1.3.3 Các giao thức con
+   TLS Record Protocol đóng gói 4 giao thức con đảm nhận các nhiệm vụ riêng biệt trong vòng đời kết nối: 
+Sơ đồ 1.7: So sánh sơ đồ luồng trao đổi gói tin giữa TLS 1.2 (2-RTT) và TLS 1.3 (1-RTT)  
+ 
+
+Content Type (Byte 0) 
+Mã Hex / Dec 
+Chức năng giao thức con 
+ChangeCipherSpec 
+0x14 / 20 
+Thông báo bắt đầu mã hóa dữ liệu theo khóa mới thương lượng 
+Alert 
+0x15 / 21 
+Truyền phát tin nhắn cảnh báo hoặc báo lỗi (Warning/Fatal) 
+Handshake 
+0x16 / 22 
+Đàm phán phiên bản, Cipher Suite, trao đổi khóa và xác thực 
+Application Data 
+0x17 / 23 
+Đóng gói dữ liệu thực tế tầng ứng dụng (HTTP, SMTP, IMAP) 
+Bảng 1.3: Bảng mã loại Content Type của các giao thức con TLS. 
+
+
+            CHƯƠNG 2. CƠ SỞ MẬT MÃ, QUY TRÌNH HANDSHAKE VÀ CIPHER SUITE
+2.1 Hệ mật mã lai (Hybrid Cryptosystem) TLS
+Giao thức TLS (Transport Layer Security) sử dụng hệ mật mã lai nhằm kết hợp điểm mạnh của cả hai trường phái mật mã học: mã hóa bất đối xứng và mã hóa đối xứng. Sự kết hợp này giải quyết bài toán cốt lõi là vừa đảm bảo an toàn tuyệt đối khi thiết lập kết nối ban đầu trên kênh truyền không an toàn, vừa đảm bảo hiệu năng truyền tải dữ liệu tốc độ cao trong suốt phiên làm việc.
+2.1.1 Vai trò của mật mã bất đối xứng
+ Xác thực danh tính: Sử dụng các cặp khóa công khai/bí mật (thường thông qua chứng chỉ số X.509 dựa trên RSA hoặc ECDSA) để chứng minh cho client biết rằng họ đang kết nối đúng với server đích, ngăn chặn các cuộc tấn công giả mạo.
+Thỏa thuận khóa bí mật (Key Agreement / Key Exchange): Cho phép client và server thiết lập một vùng bí mật chung (Master Secret hoặc Pre-Master Secret) trên một kênh truyền công khai mà không sợ bị nghe lén, nhờ vào các bài toán toán học khó (như phân tích thừa số nguyên tố hoặc logarit rời rạc trên đường cong Elliptic).
+2.1.2 Vai trò của mật mã đối xứng
+Sau khi quá trình bắt tay (Handshake) hoàn tất và các bên đã nắm giữ khóa phiên (Session Keys) chung, toàn bộ lưu lượng dữ liệu ứng dụng (HTTP, WebSocket, v.v.) sẽ được mã hóa và giải mã bằng các thuật toán đối xứng (như AES-GCM hoặc ChaCha20-Poly1305).
+Mật mã đối xứng có tốc độ xử lý nhanh hơn hàng trăm lần so với mã hóa bất đối xứng, đáp ứng yêu cầu băng thông lớn và độ trễ thấp của các ứng dụng web hiện đại.
+2.2 Trao đổi khóa TLS
+2.2.1 Trao đổi khóa bằng RSA (Pre-Master Secret 48 byte)
+Trong các phiên bản TLS cũ (như TLS 1.2 trở về trước hỗ trợ chế độ RSA Key Exchange truyền thống):
+-  Client tạo ra một chuỗi ngẫu nhiên dài 48 byte gọi là Pre-Master Secret.
+-   Client tiến hành mã hóa chuỗi Pre-Master Secret này bằng khóa công khai (Public Key) lấy từ chứng chỉ số của Server.
+
+Chỉ có Server mới sở hữu khóa bí mật (Private Key) tương ứng để giải mã và thu hồi lại đúng chuỗi Pre-Master Secret 48 byte này.
+
+Cả client và server dùng chung Pre-Master Secret này kết hợp với Client Random và Server Random để sinh ra Master Secret phục vụ mã hóa phiên.
+2.2.2. Hạn chế của cơ chế trao đổi khóa RSA truyền thống và các lỗ hổng bảo mật lịch sử
+Trong cấu trúc trao đổi khóa dựa trên RSA cổ điển của TLS, việc phụ thuộc hoàn toàn vào khóa công khai/riêng tư dài hạn của máy chủ (Server) bộc lộ những rủi ro cấu trúc nghiêm trọng về mặt bảo mật dài hạn.
+Sự thiếu hụt tính bảo mật chuyển tiếp hoàn hảo (Perfect Forward Secrecy - PFS).
+-  Bản chất vấn đề: Trong chế độ trao đổi khóa RSA tĩnh, gói tin Pre-Master Secret được mã hóa trực tiếp bằng khóa công khai dài hạn của Server. Do đó, giá trị này phụ thuộc chặt chẽ vào một cặp khóa duy nhất được sử dụng cho hàng triệu phiên kết nối trong suốt vòng đời của chứng chỉ số.
+-   Kịch bản rủi ro: Nếu khóa riêng (Private Key) dài hạn của Server bị lộ do tấn công xâm nhập mạng, hoặc trong tương lai bị giải mã bời năng lực tính toán vượt trội của máy tính lượng tử (Quantum Computing), toàn bộ lưu lượng dữ liệu mã hóa đã bị kẻ tấn công ghi lại (passive eavesdropping) từ nhiều năm trước đó sẽ bị giải mã hoàn toàn. Kẻ tấn công có thể thu hồi lại Pre-Master Secret, từ đó tái tạo toàn bộ khóa phiên để đọc trộm lịch sử giao dịch quá khứ.
+Lỗ hổng bảo mật nghiêm trọng: Heartbleed (CVE-2014-0160).
+-  Bản chất kỹ thuật: Heartbleed là một lỗi tràn bộ nhớ đệm kiểu đọc quá giới hạn xuất hiện trong phần mở rộng giao thức Heartbeat của thư viện OpenSSL.
+-   Cơ chế khai thác: Do thiếu cơ chế kiểm tra biên độ dữ liệu đầu vào trong gói tin yêu cầu giữ nhịp (Heartbeat Request), kẻ tấn công có thể gửi một độ dài tải trọng giả mạo, buộc tiến trình OpenSSL phản hồi lại một vùng bộ nhớ đệm RAM tự do lên tới 64 KB.
+-  Hậu quả hệ thống: Thao tác này cho phép kẻ tấn công đọc trực tiếp các vùng nhớ tiến trình trên RAM của Server mà không cần xác thực. Hệ quả là các thành phần tối mật như khóa riêng RSA dài hạn, mã thông báo phiên (session cookies), tên định danh người dùng và dữ liệu ứng dụng nhạy cảm bị đánh cắp hoàn toàn mà không để lại bất kỳ dấu vết log nào trên hệ thống.
+2.2.3 Trao đổi khóa ECDHE
+ECDHE (Elliptic Curve Diffie-Hellman Ephemeral) là cơ chuẩn trao đổi khóa hiện đại khắc phục hoàn toàn nhược điểm thiếu PFS.
+-   Đường cong và điểm cơ sở G (X25519, P-256): Hệ thống thống nhất sử dụng một đường cong elliptic chuẩn cùng với một điểm sinh (generator point) G trên đường cong đó làm tham số công khai.
+-   Client và Server lần lượt sinh ngẫu nhiên các cặp khóa riêng tạm thời a và b cho từng phiên riêng biệt. Các khóa công khai tương ứng được tính toán:
+
+-   Thiết lập bí mật chung S: Dựa trên các giá trị đã trao đổi, mỗi bên tự tính toán khóa bí mật chung thống nhất:
+
+-    Cơ sở an toàn và tính chất PFS: Độ an toàn dựa trên độ khó của bài toán Logarit rời rạc trên đường cong elliptic (ECDLP). Vì các khóa riêng a và b bị tiêu hủy ngay sau khi phiên kết nối hoàn tất, việc lộ khóa dài hạn của máy chủ trong tương lai hoàn toàn không thể giải mã lại bí mật chung S của các phiên quá khứ (đảm bảo Perfect Forward Secrecy).
+ 
+2.2.4 Client Random và Server Random
+ 
+ Trong bản tin ClientHello và ServerHello, mỗi bên đóng góp một chuỗi ngẫu nhiên dài 32 byte (bao gồm 4 byte timestamp và 28 byte ngẫu nhiên thuần túy).
+ Vai trò: Giúp chống lại các cuộc tấn công phát lại (Replay Attack), đồng thời là thành phần đầu vào bắt buộc trong hàm dẫn xuất khóa để đảm bảo mỗi phiên kết nối sinh ra một bộ khóa mã hóa hoàn toàn duy nhất.
+ 2.2.5 Khôi phục phiên: Session ID (stateful) và Session Ticket/PSK (stateless)
+ 
+Session ID (Stateful - TLS 1.2): Server lưu trữ trạng thái phiên (Master Secret, Cipher Suite) tương ứng với một mã định danh Session ID. Khi client kết nối lại, gửi kèm Session ID, nếu server tìm thấy trong bộ nhớ cache, quá trình bắt tay được rút gọn (Session Resumption). Nhược điểm là server phải tốn bộ nhớ để lưu trữ trạng thái cho hàng triệu client.
+ Session Ticket / Pre-Shared Key (Stateless - TLS 1.2 / TLS 1.3): Server mã hóa toàn bộ trạng thái phiên bằng một khóa bí mật nội bộ độc quyền và gửi về cho client dưới dạng một "Ticket" (hoặc PSK). Khi client tái kết nối, client gửi lại Ticket này; server chỉ cần giải mã Ticket mà không cần tốn dung lượng lưu trữ trạng thái.
+2.2.6 Hàm phái sinh khóa HKDF (RFC 5869)
+HKDF (HMAC-based Extract-and-Expand Key Derivation Function) được sử dụng trong TLS 1.3 để chuẩn hóa việc sinh khóa an toàn:
+-    Bước Extract (Trích xuất): Nhận đầu vào là dữ liệu thô (ví dụ: Pre-Master Secret) và một chuỗi ngẫu nhiên (salt), sử dụng hàm băm HMAC để nén và trích xuất thành một khóa giả ngẫu nhiên (PRK - Pseudorandom Key) có độ dài cố định và an toàn cao.
+-    Bước Expand (Mở rộng): Nhận khóa giả ngẫu nhiên PRK kết hợp với thông tin bổ sung (context info, label) để mở rộng và sinh ra các khóa con với độ dài tùy ý phục vụ cho việc mã hóa, xác thực và tạo vector khởi tạo (IV).
+2.3 Quy trình Handshake TLS
+2.3.1 TLS 1.2 (2-RTT)
+Giao thức TLS 1.2 tiêu chuẩn đòi hỏi 2 vòng truyền dữ liệu khứ hồi (2-RTT - Round Trip Time) trước khi dữ liệu ứng dụng đầu tiên được gửi đi:
+
+                Hình 2.1. Sơ đồ trình tự quy trình bắt tay TLS 1.2 (TLS Handshake).
+Vòng 1 (RTT 1):
+-    Bước Expand (Mở rộng): Nhận khóa giả ngẫu nhiên PRK kết hợp với thông tin bổ sung (context info, label) để mở rộng và sinh ra các khóa con với độ dài tùy ý phục vụ cho việc mã hóa, xác thực và tạo vector khởi tạo (IV).
+-    Server phản hồi ServerHello (chọn Cipher Suite, Server Random), gửi chứng chỉ số (Certificate), khóa trao đổi (ServerKeyExchange) và kết thúc bằng ServerHelloDone.
+Vòng 2 (RTT 2):
+-    Client gửi ClientKeyExchange (chứa Pre-Master Secret đã mã hóa hoặc khóa công khai ECDHE), gửi bản tin ChangeCipherSpec và Finished.
+-   Server phản hồi bản tin ChangeCipherSpec và Finished của riêng mình.  
+Hạn chế: Chứng chỉ số (Certificate) của Server được truyền tải hoàn toàn ở dạng bản rõ trong vòng đầu tiên, dễ bị các bên trung gian theo dõi, kiểm duyệt hoặc thu thập thông tin định danh người dùng.
+2.3.2 TLS 1.3 (1-RTT)
+TLS 1.3 tối ưu hóa quá trình bắt tay xuống chỉ còn 1-RTT:
+
+                Hình 2.2. Sơ đồ trình tự quy trình bắt tay TLS 1.3 (TLS Handshake).
+Key Share trong ClientHello: Ngay từ bản tin ClientHello đầu tiên, client đã chủ động đoán và gửi kèm khóa công khai ECDHE (Key Share) cho các đường cong phổ biến. Nhờ vậy, server lập tức tính được khóa phiên mà không cần chờ thêm một lượt hỏi đáp.
+Các bản tin sau ServerHello đều được mã hóa: Ngay sau bản tin ServerHello, các chứng chỉ, phần mở rộng và chữ ký số của server đều được mã hóa hoàn toàn, bảo vệ quyền riêng tư và danh tính của người dùng trước các thiết bị nghe lén trên đường truyền.
+RFC 9849 Encrypted Client Hello (ECH): Cải tiến mới giúp mã hóa cả các thông tin định danh nhạy cảm trong bản tin ClientHello ban đầu, chống lại các kỹ thuật kiểm duyệt và soi mói SNI của nhà mạng, tường lửa.
+2.3.3. Tối ưu hóa 0-RTT (Early Data) và rủi ro tấn công phát lại (Replay Attack)
+Cơ chế Early Data (0-RTT): Cho phép client đã từng thiết lập phiên kết nối trước đó với server có thể gửi kèm dữ liệu ứng dụng ngay trong bản tin ClientHello đầu tiên dựa trên Pre-Shared Key (PSK) đã lưu trữ, giúp cắt giảm độ trễ xuống mức 0-RTT.
+Rủi ro tấn công phát lại (Replay Attack): Dữ liệu truyền tải trong không gian 0-RTT có thể bị kẻ tấn công bắt giữ và phát lại nhiều lần lên server. Do đó, cơ chế này tiềm ẩn rủi ro nghiêm trọng nếu áp dụng cho các yêu cầu thay đổi trạng thái hệ thống (như giao dịch thanh toán, hoặc các phương thức POST, PUT, DELETE).
+Phạm vi giới hạn: Tiêu chuẩn kỹ thuật quy định cơ chế 0-RTT chỉ được phép cấu hình độc quyền cho các phương thức mang tính an toàn và có tính lũy đẳng cao (chẳng hạn như truy vấn dữ liệu với HTTP GET).
+ 2.3.4 Bảng so sánh TLS 1.2 và TLS 1.3 
+ 
+
+Hình 2.3. So sánh tiến trình thiết lập kết nối đầy đủ (Full Handshake) và độ trễ phản hồi giữa TLS 1.2 và TLS 1.3.
+Để tổng hợp và làm rõ hơn những điểm khác biệt chính giữa hai phiên bản đã trình bày ở trên, Bảng 2.3 dưới đây hệ thống hóa các tiêu chí kỹ thuật cốt lõi giữa TLS 1.2 và TLS 1.3.
+Tiêu chí so sánh
+TLS 1.2
+TLS 1.3
+Số vòng RTT tối thiểu
+2-RTT
+1-RTT (hoặc 0-RTT với Session Resumption)
+Hỗ trợ Perfect Forward Secrecy (PFS)
+Tùy chọn (Bắt buộc nếu cấu hình bộ mã ECDHE)
+Bắt buộc với mọi phiên trao đổi khóa
+Mã hóa bản tin Handshake
+Hầu hết ở bản rõ (trừ bản tin Finished)
+Mã hóa phần lớn ngay sau ServerHello
+Cơ chế ChangeCipherSpec
+Bắt buộc tồn tại trong luồng bản tin
+Đã bị loại bỏ (chỉ giữ lại để tương thích ngược giả lập)
+ 
+Bảng 2.1. So sánh các đặc tính kỹ thuật chính giữa giao thức TLS 1.2 và TLS 1.3.
+2.4 Các nhóm thuật toán mật mã trong TLS
+Cơ chế Early Data (0-RTT): Cho phép client đã từng thiết lập phiên kết nối trước đó với server có thể gửi kèm dữ liệu ứng dụng ngay trong bản tin ClientHello đầu tiên dựa trên Pre-Shared Key (PSK) đã lưu trữ, giúp cắt giảm độ trễ xuống mức 0-RTT.
+Rủi ro tấn công phát lại (Replay Attack): Dữ liệu truyền tải trong không gian 0-RTT có thể bị kẻ tấn công bắt giữ và phát lại nhiều lần lên server. Do đó, cơ chế này tiềm ẩn rủi ro nghiêm trọng nếu áp dụng cho các yêu cầu thay đổi trạng thái hệ thống (như giao dịch thanh toán, hoặc các phương thức POST, PUT, DELETE).
+2.4.1 Trao đổi khóa
+ECDHE / DHE: Sử dụng thuật toán đường cong Elliptic hoặc số mũ rời rạc với tính chất sinh khóa tạm thời (Ephemeral), đảm bảo PFS.
+RSA tĩnh (Static RSA): Khóa RSA trong chứng chỉ được dùng trực tiếp để giải mã khóa phiên. Hiện đã lỗi thời và bị loại bỏ hoàn toàn trong TLS 1.3 do không hỗ trợ PFS.
+2.4.2 Chữ ký số và xác thực
+RSA: Thuật toán kinh điển dựa trên bài toán phân tích thừa số nguyên tố lớn.
+ECDSA: Chữ ký số trên đường cong Elliptic, hiệu năng cao, kích thước chữ ký nhỏ gọn.
+Ed25519: Thuật toán chữ ký số hiện đại hiệu suất cao, chống tấn công thời gian (timing attacks) tốt hơn ECDSA truyền thống.
+2.4.3 Mã hóa đối xứng
+AES-GCM / AES-CCM: Chuẩn mã hóa khối AES kết hợp chế độ hoạt động Galois/Counter Mode, vừa mã hóa vừa xác thực dữ liệu cực nhanh nhờ phần cứng hỗ trợ tăng tốc (AES-NI).
+ChaCha20-Poly1305: Thuật toán mã hóa dòng và xác thực do Daniel J. Bernstein thiết kế, tối ưu hóa tuyệt vời cho các thiết bị di động yếu hoặc không có phần cứng tăng tốc AES.
+Các thuật toán bị cấm: RC4 (lộ điểm yếu cấu trúc dòng khóa), 3DES (không gian khối quá nhỏ, dễ bị tấn công Sweet32), và chế độ CBC thuần túy (dễ bị tấn công Padding Oracle).
+2.4.4. Cơ chế bảo mật toàn vẹn dữ liệu, mã xác thực và phái sinh khóa (AEAD, HMAC, HKDF)
+Mô hình AEAD (Authenticated Encryption with Associated Data): Cơ chế kết hợp đồng thời hai tính năng cốt lõi là mã hóa bảo mật (Confidentiality) và xác thực toàn vẹn (Integrity) trong cùng một thuật toán duy nhất.
+Mã xác thực thông điệp HMAC (Hash-based Message Authentication Code): Cơ chế xác thực thông điệp sử dụng hàm băm mật mã học kết hợp với khóa bí mật (ví dụ: HMAC-SHA256), giúp đảm bảo tính toàn vẹn và xác thực nguồn gốc dữ liệu.
+Hàm phái sinh khóa HKDF (HMAC-based Extract-and-Expand Key Derivation Function): Hàm trích xuất và mở rộng khóa tiêu chuẩn theo RFC 5869, sử dụng nền tảng HMAC để tạo ra các khóa phiên an toàn từ khóa gốc ban đầu.
+2.5 Cipher Suite và cơ chế AEAD TLS
+Cấu trúc tên chuẩn của một bộ mã Cipher Suite trong TLS 1.2 tuân theo quy tắc:
+
+Giải nghĩa chi tiết cho bộ mã mẫu TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:
+-    TLS: Giao thức áp dụng.
+-     ECDHE: Thuật toán trao đổi khóa (Elliptic Curve Diffie-Hellman Ephemeral) - đảm bảo tính chất PFS.
+-     RSA: Thuật toán chữ ký số / xác thực danh tính server (Sử dụng khóa công khai RSA trong chứng chỉ số để ký xác thực).
+-     AES_128_GCM: Thuật toán mã hóa đối xứng khối AES với độ dài khóa 128-bit hoạt động ở chế độ Galois/Counter Mode (là một chế độ AEAD vừa mã hóa vừa xác thực).
+-     SHA256: Hàm băm dùng cho các chức năng kiểm tra toàn vẹn nội bộ / sinh khóa (HKDF/PRF).
+2.5.2 Cipher Suite tinh gọn của TLS 1.3
+TLS 1.3 cắt bỏ hoàn toàn sự rườm rà của cấu trúc tên cũ, tách bạch rõ ràng giữa thuật toán mã hóa đối xứng/AEAD và hàm băm. Tiêu chuẩn chỉ quy định 5 bộ Cipher Suite chính thức duy nhất:
+
+-   TLS_AES_256_GCM_SHA384
+-   TLS_CHACHA20_POLY1305_SHA256
+-   TLS_AES_128_GCM_SHA256
+-   TLS_AES_128_CCM_SHA256
+-  TLS_AES_128_CCM_8_SHA256
+
+2.5.3 MAC-then-Encrypt trên CBC và tấn công Padding Oracle
+Mô hình kết hợp MAC-then-Encrypt (đặc trưng của TLS 1.2 cũ): Trong các phiên bản giao thức tiền nhiệm như TLS 1.2, mô hình bảo mật truyền thống thường áp dụng phương pháp MAC-then-Encrypt. Theo đó, thông điệp dữ liệu ban đầu sẽ được tính toán mã xác thực (MAC) dựa trên hàm băm và khóa bí mật; sau đó, bản tin gốc ghép chung với mã MAC này sẽ tiếp tục được đưa qua bộ đệm (padding) cho đủ kích thước khối và tiến hành mã hóa đối xứng theo chế độ khối CBC (Cipher Block Chaining). Mặc dù từng được xem là tiêu chuẩn trong một thời gian dài, cấu trúc thiết kế tách biệt này đã vô tình để lại những khoảng trống chí mạng về mặt mật mã học. Quá trình giải mã khối đối xứng này tại phía nhận diễn ra tuần tự như minh họa dưới đây.
+
+Hình 2.4. Sơ đồ nguyên lý giải mã khối theo chế độ CBC (Cipher Block Chaining Mode Decryption). 
+Bản chất và cơ chế của tấn công Padding Oracle: Do đặc thù của chế độ CBC yêu cầu dữ liệu phải được chia thành các khối có kích thước cố định, các byte đệm (padding bytes) được thêm vào cuối bản tin. Điểm yếu cốt lõi nằm ở cách thức mà các hệ thống cũ xử lý thông báo lỗi khi quá trình giải mã thất bại: nếu cấu trúc padding không hợp lệ, server sẽ trả về một phản hồi khác biệt (về mã lỗi hoặc độ trễ thời gian xử lý) so với lỗi xác thực MAC. Kẻ tấn công lợi dụng khuyết điểm này bằng cách gửi liên tục các bản tin mã hóa bị chỉnh sửa có chủ đích và quan sát tín hiệu phản hồi (gọi là Oracle). Thông qua việc phân tích sự thay đổi trong phản hồi của server, kẻ tấn công có thể "mò" ra từng byte dữ liệu bản rõ một cách tuần tự mà hoàn toàn không cần phải biết khóa giải mã bí mật.
+Hậu quả thực tế: Lỗ hổng này đã minh chứng qua các cuộc tấn công nổi tiếng như Lucky 13, nơi các chuyên gia bảo mật chứng minh rằng kẻ tấn công có thể khai thác sự chênh lệch thời gian xử lý giữa lỗi padding và lỗi MAC để giải mã trực tiếp lưu lượng bảo mật trên các đường truyền thực tế. Chính từ những bài học đắt giá này, TLS 1.3 đã quyết định loại bỏ hoàn toàn các chế độ mã hóa khối CBC truyền thống, đồng thời tích hợp chặt chẽ mô hình AEAD hiện đại để triệt tiêu vĩnh viễn các dòng lỗ hổng tấn công Padding Oracle.
+2.5.4. Cơ chế AEAD: Tích hợp mã hóa, xác thực đồng thời và kiểm tra toàn vẹn
+Nguyên lý tích hợp AEAD (Authenticated Encryption with Associated Data): Thay vì tách rời hai tiến trình mã hóa bảo mật và tạo mã xác thực thông điệp vốn dễ tiềm ẩn các lỗ hổng thiết kế nghiêm trọng, mô hình AEAD gom nhóm chặt chẽ cả hai thao tác này trong một thuật toán duy nhất.
+Vai trò quyết định của Authentication Tag: Quá trình mã hóa AEAD luôn sinh ra một thẻ xác thực (Tag) đi kèm với bản mã. Khi tiến trình giải mã diễn ra, hệ thống bắt buộc phải kiểm tra tính hợp lệ của Tag trước tiên. Nếu thẻ xác thực không khớp (dù dữ liệu bị thay đổi chỉ một bit nhỏ), toàn bộ tiến trình giải mã sẽ lập tức bị hủy bỏ hoàn toàn trước khi xử lý dữ liệu, qua đó ngăn chặn triệt để các kỹ thuật tấn công giải mã sai lệch hoặc tấn công chèn ép, giả mạo bản tin.
+2.5.5 Dấu vết của các cuộc tấn công vào phiên bản cũ
+Sự tiến hóa của giao thức TLS là lịch sử khắc phục các lỗ hổng chí mạng từ các phiên bản tiền nhiệm (SSLv3, TLS 1.0, TLS 1.1):
+-   Lỗ hổng BEAST / CRIME / BREACH: Khai thác điểm yếu liên quan đến nén dữ liệu và mã hóa dòng/CBC, dẫn đến việc rò rỉ cookie phiên HTTP.
+-   Lỗ hổng POODLE: Khai thác cách xử lý bản đệm (padding) trong SSLv3, buộc cộng đồng công nghệ phải chính thức khai tử hoàn toàn SSLv3.
+-   Lỗ hổng Lucky 13: Tấn công thời gian (Timing Attack) nhắm vào cơ chế MAC-then-Encrypt của chế độ CBC trong TLS 1.1/1.2.
+CHƯƠNG 3. HẠ TẦNG KHÓA CÔNG KHAI (PKI) VÀ CHỮ KÝ SỐ
+3.1 Nền tảng mật mã học: Hàm băm và Chữ ký số
+3.1.1 Hàm băm mật mã (SHA-256) và bản tóm lược (Message Digest)
+Hàm băm mật mã là nền tảng của toàn bộ hạ tầng xác thực. Thuật toán SHA-256 nhận đầu vào là chuỗi dữ liệu có độ dài bất kỳ và biến đổi thành một bản tin có kích thước cố định 256 bit.
+• Hiệu ứng Avalanche: Chỉ cần thay đổi 1 bit ở dữ liệu đầu vào, ít nhất 50% số bit ở đầu ra sẽ thay đổi hoàn toàn ngẫu nhiên.
+• 3 tính chất mật mã bắt buộc:
+1. Tính một chiều: 
+Không thể suy ngược từ  về .
+Ý nghĩa: Không thể từ mã băm suy ngược về nội dung đầu vào
+1. Tính chống xung đột yếu: 
+Cho trước , cực kì khó về mặt tính toán để tìm  sao cho .
+Ý nghĩa: Biết trước 1 giá trị cho trước, cực kì khó để có thể tìm được 1 giá trị thứ 2 có thể cho ra cùng 1 mã băm
+1. Tính chống xung đột mạnh: 
+Cực kỳ khó để tìm ra bất kỳ cặp  phân biệt nào có .
+Ý nghĩa: Làm khó việc để tìm ra được 1 cặp đầu vào có thể ra được cùng 1 mã băm
+3.1.2 Chữ ký số RSA và cơ chế ký tối ưu
+Chữ ký số dùng để đảm bảo Tính toàn vẹn và Tính chống chối bỏ. Mỗi thực thể sở hữu một cặp khóa RSA: Khóa riêng () bí mật để ký, và Khóa công khai () để xác thực.
+• Công thức toán học:
+◦ Giả sử  là bản tóm lược của thông điệp.
+◦ Tạo chữ ký (): $S = M^d \pmod n$
+◦ Xác thực chữ ký (): $M' = S^e \pmod n$
+◦ Đối chiếu: Người xác thực tính . Nếu , chữ ký hợp lệ.
+• Vai trò của băm trong tối ưu hiệu năng:Phép toán RSA trên dữ liệu dung lượng lớn cực kỳ chậm. Bằng cách băm dữ liệu trước rồi mới ký trên mã băm, thời gian xử lý giảm hàng nghìn lần mà vẫn đảm bảo an toàn nhờ tính chống xung đột của hàm băm.
+3.2 Nhận diện và Chuỗi tin cậy (Chain of Trust)
+3.2.1 Cấu trúc Chứng thư số X.509 v3 (RFC 5280)
+Để khóa công khai không bị mạo danh, một Tổ chức chứng thực (CA) sẽ ký lên chứng thư số nhằm gắn kết tên miền/tổ chức với khóa công khai đó. Cấu trúc gồm các trường chính:
+• Subject: Thông tin định danh sở hữu chứng chỉ.
+• Subject Alternative Name (SAN): Danh sách tên miền (example.com, *.example.com) hoặc IP được chứng chỉ bảo mật.
+• Subject Public Key Info: Thuật toán và giá trị khóa công khai của Subject.
+• Issuer: Thông tin của CA cấp phát và ký chứng chỉ.
+• Validity: Khoảng thời gian hiệu lực (Not Before và Not After).
+• Basic Constraints: Trường quy định vai trò: CA:TRUE (được quyền ký cấp chứng chỉ khác) hoặc CA:FALSE (chứng chỉ thực thể cuối/Leaf Certificate).
+• AIA & CDP: Chứa URL tra cứu thông tin CA cấp trên (AIA) và danh sách thu hồi (CDP).
+
+Ví dụ một chứng thư số của Google:
+Subject Name
+Country US Organization Google Trust Services LLC Common Name GTS Root R4
+Issuer Name
+Country US Organization Google Trust Services LLC Common Name GTS Root R4
+Validity
+Not Before Wed, 22 Jun 2016 00:00:00 GMT 
+Not After Sun, 22 Jun 2036 00:00:00 GMT
+Public Key Info
+Algorithm Elliptic Curve Key Size 384 Public Value 04:F3:74:73:A7:68:8B:60:AE:43:B8:35:C5:81:30:7B:4B:49:9D:FB:C1:61:CE:E6:DE:46:BD:6B:D5:61:18:35:AE:40:DD:73:F7:89:91:30:5A:EB:3C:EE:85:7C:A2:40:76:3B:A9:C6:B8:47:D8:2A:E7:92:91:6A:73:E9:B1:72:39:9F:29:9F:A2:98:D3:5F:5E:58:86:65:0F:A1:84:65:06:D1:DC:8B:C9:C7:73:C8:8C:6A:2F:E5:C4:AB:D1:1D:8A
+Miscellaneous
+Serial Number 02:03:E5:C0:68:EF:63:1A:9C:72:90:50:52 Signature Algorithm ECDSA with SHA-384 Version 3 Download PEM (cert)PEM (chain)
+Fingerprints
+SHA-256 34:9D:FA:40:58:C5:E2:63:12:3B:39:8A:E7:95:57:3C:4E:13:13:C8:3F:E6:8F:93:55:6C:D5:E8:03:1B:3C:7D SHA-1 77:D3:03:67:B5:E0:0C:15:F6:0C:38:61:DF:7C:E1:3B:92:46:4D:47
+Basic Constraints
+Certificate Authority Yes
+Key Usages
+Purposes Digital Signature, Certificate Signing, CRL Signing
+Subject Key ID
+Key ID 80:4C:D6:EB:74:FF:49:36:A3:D5:D8:FC:B5:3E:C5:6A:F0:94:1D:8C 
+3.2.2 Cấu trúc Chuỗi tin cậy (Chain of Trust)
+Hạ tầng PKI tổ chức theo mô hình phân cấp để đảm bảo an toàn tuyệt đối cho các chứng chỉ trung gian:
+1. Chứng chỉ thực thể cuối (Leaf Certificate): Cài trên Server, chứa CA:FALSE, dùng để giao tiếp TLS với người dùng.
+2. Chứng chỉ trung gian (Intermediate CA): Đứng giữa Root CA và Leaf Certificate, trực tiếp duyệt và ký cấp chứng chỉ hàng ngày.
+3. Chứng chỉ gốc (Root CA)
+Root CA là chứng chỉ tự ký, chứng chỉ này là gốc, được một tổ chức tạo ra từ Private Key tự tạo và tự công nhận là uy tín.
+Private Key được sử dụng để kí Root CA luôn cần được bảo vệ an toàn, sử dụng các phần cứng chuyên dụng đạt các tiêu chuẩn an ninh nghiêm ngặt, được cách ly Air-Gap
+
+Mô hình phân cấp Chuỗi tin cậy (Certificate Chain of Trust): Hệ thống chứng thực không hoạt động đơn lẻ mà liên kết theo chuỗi hình nón:
+• Chứng chỉ thực thể cuối (End-entity Certificate): Cài đặt trực tiếp trên Web Server để phục vụ người dùng.
+• Chứng chỉ trung gian (Intermediate CA): Do cơ quan chứng thực gốc ủy quyền phát hành. Các tổ chức CA luôn khóa kín khóa riêng của Root CA trong môi trường ngoại tuyến (Hardware Security Module cách ly mạng) và chỉ dùng Intermediate CA để xử lý ký chứng chỉ hàng ngày. Nếu một chứng chỉ trung gian bị xâm phạm, tổ chức CA chỉ cần thu hồi nhánh trung gian đó mà không làm tê liệt toàn bộ hệ thống gốc.
+• Chứng chỉ gốc (Root CA): Là chứng chỉ tự ký (Self-signed) đứng ở đỉnh chuỗi. Chữ ký số trên Root CA do chính khóa riêng của nó tạo ra. Các Root CA uy tín phải trải qua các đợt kiểm toán khắt khe (tiêu chuẩn WebTrust) để được đưa vào Kho lưu trữ tin cậy (Trust Store / Root Store) được hệ điều hành hoặc trình duyệt cài sẵn.
+Quy trình thẩm định chuỗi chứng chỉ tại máy khách: Khi nhận chuỗi chứng chỉ từ máy chủ, trình duyệt thực hiện quy trình xác thực ngược dòng:
+1. Dùng khóa công khai của Intermediate CA để kiểm tra chữ ký mật mã trên Chứng chỉ thực thể cuối.
+2. Dùng khóa công khai của Root CA để kiểm tra chữ ký trên Chứng chỉ Intermediate CA.
+3. Đối chiếu xem Root CA ký ở đầu chuỗi có nằm trong Trust Store cục bộ của thiết bị hay không.
+4. Kiểm tra tính hợp lệ của thời gian hiện tại so với trường Validity, và đối chiếu tên miền trên thanh địa chỉ URL có khớp chính xác với danh sách tên miền trong trường SAN hay không. Nếu toàn bộ điều kiện thỏa mãn, kết nối mới được phê duyệt an toàn.
+
+3.3 Các điểm yếu có thể bị lợi dụng để tấn công
+Sau khi hệ thống được thiết lập, kẻ tấn công sẽ nhắm vào các điểm yếu trong trao đổi khóa và xác thực:
+3.3.1 Giới hạn của ECDH (Chỉ chống nghe lén thụ động)
+
+Thuật toán ECDH cho phép Client và Server thỏa thuận khóa phiên bí mật qua kênh truyền công khai mà kẻ nghe lén không thể tính ra nhờ độ khó của bài toán lôgarit rời rạc trên đường cong elip (ECDLP).
+Kịch bản tấn công giả định:
+• [Alice] <--- (Khóa ) ---> [MitM] <--- (Khóa ) ---> [Bob] 
+MitM đứng ở giữa thay thế khoá bằng khoá của bản thân, giả danh Alice/Bob để nghe lén thông tin
+Giải pháp là cần có thêm biện pháp Xác Thực cùng với ECDH
+Ví dụ trong TLS 1.3, máy chủ gửi khóa ECDH tạm thời kèm theo chữ ký số được ký bởi Private Key của chứng chỉ.
+3.3.2 Tấn công Xen vào giữa (Man-in-the-Middle - MitM)
+Nếu không có bước đối chiếu chứng thư số, kẻ tấn công (MitM) can thiệp vào đường truyền và thực hiện MitM:
+• Client <--- (Khóa ECDH K1) ---> Mallory (Tấn công) <--- (Khóa ECDH K2) ---> Server thật
+
+1. Mallory chặn gói tin ECDH từ Client, tự giả làm Server và thiết lập khóa  với Client.
+2. Mallory mở một kết nối ECDH khác với Server thật, thiết lập khóa  với Server.
+3. Mọi dữ liệu Client gửi đi đều bị Mallory giải mã bằng , đọc/sửa đổi, rồi mã hóa lại bằng  gửi cho Server. Client hoàn toàn bị đánh lừa vì ECDH không chứng minh được "ai" đang đứng ở đầu bên kia.
+3.3.3 Quy trình 4 bước thẩm định tại Máy khách (Chống MitM)
+Để chống lại tấn công MitM, máy khách (Client) bắt buộc phải thực hiện 4 bước xác minh chuỗi chứng chỉ ngay khi nhận gói tin bắt tay TLS:
+• [Leaf Certificate] ---> (Xác thực chữ ký) ---> [Intermediate CA] ---> (Xác thực chữ ký) ---> [Root CA trong Trust Store]
+
+1. Bước 1: Kiểm tra chữ ký ngược dòng (Signature Chain): Dùng Public Key của CA cấp trên để giải mã chữ ký trên chứng chỉ cấp dưới.
+2. Bước 2: Đối chiếu Trust Store: Truy ngược về đỉnh chuỗi xem Root CA có nằm trong danh sách tin cậy sẵn có của Hệ điều hành/Trình duyệt hay không.
+3. Bước 3: Kiểm tra thời hạn (Validity Check): Kiểm tra thời gian hiện tại có nằm trong khoảng Not Before - Not After của tất cả chứng chỉ trong chuỗi.
+4. Bước 4: Đối chiếu SAN (Hostname Verification): Kiểm tra tên miền/IP trên URL truy cập có khớp với danh sách khai báo trong trường SAN của Leaf Certificate hay không.
+3.4 Cơ chế thu hồi chứng thư số (Certificate Revocation)
+Khi xảy ra sự cố rò rỉ Private Key hoặc CA cấp sai chứng chỉ, chứng chỉ đó phải bị hủy bỏ hiệu lực ngay lập tức dù chưa hết hạn Validity.
+3.4.1 Cơ chế CRL (Chuẩn RFC 5280)
+• Cách hoạt động: CA xuất ra một file danh sách các Serial Number của chứng chỉ bị thu hồi (ký bởi CA). Client tải file này về theo URL trong trường CDP để đối chiếu.
+• Điểm yếu:
+◦ Dư thừa: Danh sách chứa toàn bộ các CA bị đánh dấu thu hồi, chưa có cơ chế để tra cứu một CA nhất định.
+3.4.2 Cơ chế OCSP (RFC 6960)
+• Cách hoạt động: Client gửi yêu cầu trực tiếp chứa Serial Number tới máy chủ OCSP Responder của CA để tra cứu trạng thái Good, Revoked, hoặc Unknown.
+• Điểm yếu:
+◦ Tăng độ trễ bắt tay (RTT): Phải tốn thêm kết nối HTTP tới máy chủ CA.
+◦ Lộ thông tin riêng tư: CA có thể theo dõi danh sách trang web và địa chỉ IP của người dùng.
+◦ Sự cố về tính sẵn sàng: Nếu máy chủ OCSP của CA bị sập, kết nối TLS sẽ bị gián đoạn.
+3.4.3 Giải pháp tối ưu: OCSP Stapling (Chuẩn RFC 6066)
+• Cách hoạt động: Web Server tự định kỳ truy vấn kết quả OCSP từ CA, lưu bản ghi đã được CA ký số kèm timestamp, rồi "ghim" (staple) thẳng bản ghi này vào gói tin bắt tay TLS (Server Hello) gửi cho Client.
+• Ưu điểm vượt trội: Loại bỏ hoàn toàn độ trễ dư thừa, bảo vệ quyền riêng tư tuyệt đối cho người dùng và không làm quá tải máy chủ CA.
+3.4.4 So sánh tổng hợp các cơ chế thu hồi
+Tiêu chí
+CRL
+OCSP
+OCSP Stapling
+Băng thông
+Tốn kém (Tải file danh sách lớn)
+Nhỏ (Truy vấn gói tin lẻ)
+Tối ưu nhất hiện tại (Đính kèm trực tiếp trong TLS)
+Độ trễ (Latency)
+Cao ở lần tải đầu
+Cao (Tốn thêm 1-2 RTT tới CA)
+Không có độ trễ dư thừa
+Cập nhật realtime
+Thấp (Cập nhật theo chu kỳ ngày)
+Cao (Truy vấn trực tiếp)
+Trung bình - Cao (Theo thời gian cache)
+Quyền riêng tư
+Tốt
+Yếu (CA có thể biết được lịch sử duyệt web)
+Tuyệt đối an toàn
+
+CHƯƠNG 4. CÁC MÔ HÌNH ỨNG DỤNG THỰC TẾ CỦA SSL/TLS
+Mục tiêu và bố cục chương
+-        Hiểu cách SSL/TLS được triển khai trong 4 bối cảnh: website, hệ thống nội bộ (mTLS), VPN/IoT và hạ tầng cân bằng tải.
+-        Phân biệt xác thực một chiều với hai chiều; nắm các giao thức, cổng và tiêu chuẩn liên quan (RFC, NIST, OASIS, PCI DSS).
+-        Có tiêu chí chọn TLS Termination hay TLS Passthrough và vận dụng vào một tình huống thiết kế cụ thể (mục 4.4.3).
+Thông tin nền trong chương lấy từ chuẩn, tài liệu chính thức hoặc nguồn được trích dẫn ([n], [Sn]). Số liệu có mốc thời gian được đối chiếu với tài liệu chính thức đến ngày 12/10/2026; phần bắt tay TLS dựa trên TLS 1.3 (RFC 8446), trừ khi nêu khác.
+4.1 HTTPS xác thực một chiều TLS
+Nguyên lý. Chỉ server phải chứng minh danh tính bằng chứng chỉ; client (trình duyệt) không xuất trình chứng chỉ. Người dùng biết mình đang kết nối đúng website, và dữ liệu không bị đọc hay sửa trên đường truyền. Cổng mặc định là 443/TCP (HTTP/3 chạy trên QUIC, dùng 443/UDP; chương này tập trung vào HTTPS trên TCP). Danh tính người dùng, nếu cần, được xác thực ở tầng ứng dụng (tài khoản, mật khẩu, OTP), không phải ở tầng TLS.
+4.1.1 Kịch bản: Website
+Luồng kết nối (TLS 1.3, khái quát)
+1.   ClientHello: trình duyệt gửi tên miền (SNI), các bộ mã hóa, phiên bản TLS hỗ trợ và phần chia sẻ khóa (key_share) cho trao đổi khóa (EC)DHE.
+2.   ServerHello: server chọn bộ mã hóa và gửi phần chia sẻ khóa của mình; từ đây hai bên dẫn xuất được khóa bắt tay và các thông điệp còn lại được mã hóa.
+3.   Server gửi EncryptedExtensions, Certificate (chứng chỉ lá kèm chuỗi trung gian), CertificateVerify (chữ ký bằng khóa riêng, chứng minh sở hữu khóa) và Finished.
+4.   Trình duyệt kiểm tra chứng chỉ; nếu hợp lệ thì gửi Finished, rồi hai bên truyền dữ liệu HTTP đã mã hóa bằng khóa phiên.
+Lưu ý về phiên bản. Ở TLS 1.2 chứng chỉ server gửi dạng rõ; ở TLS 1.3 chứng chỉ nằm trong phần bắt tay đã mã hóa. Luồng trên là khái quát, có thể khác khi khôi phục phiên, HelloRetryRequest hoặc dùng phiên bản TLS khác.
+Trình duyệt kiểm tra những gì [7]
+-        Chuỗi tin cậy: chứng chỉ server → CA trung gian → CA gốc nằm trong kho tin cậy (trust store) của hệ điều hành hoặc trình duyệt. Thời hạn: ngày hiện tại nằm trong khoảng notBefore–notAfter.
+-        Tên miền: khớp một mục trong Subject Alternative Name (SAN). Chữ ký và thuật toán: hợp lệ, không dùng thuật toán đã bị loại bỏ.
+-        Trạng thái thu hồi: khác bốn kiểm tra trên, mục này không có quy trình thống nhất giữa các trình duyệt. Các cơ chế gồm CRL, OCSP, OCSP stapling và danh sách do hãng phân phối (CRLSets của Chrome, CRLite của Firefox); cách xử lý khi không lấy được trạng thái (cho qua hay chặn) phụ thuộc nền tảng, phiên bản, chính sách và thay đổi theo thời gian. Let’s Encrypt đã ngừng dịch vụ OCSP vào 06/08/2025 và công bố thu hồi qua CRL [S6][S7]; chính văn bản ballot SC-081v3 cũng lập luận rằng rút ngắn thời hạn chứng chỉ tạo ra mức bảo vệ không phụ thuộc dịch vụ trạng thái [S2].
+Phân tích của nhóm: không nên coi thu hồi là lớp bảo vệ tuyệt đối
+Không nên giả định chứng chỉ bị lộ khóa sẽ lập tức bị mọi client từ chối. Ba biện pháp thực tế: (1) bảo vệ khóa riêng ngay từ đầu; (2) dùng chứng chỉ ngắn hạn kèm tự động gia hạn để thu hẹp thời gian rủi ro; (3) với ứng dụng do mình kiểm soát client, tự quy định và kiểm thử cách client xử lý khi không lấy được trạng thái thu hồi thay vì dựa vào mặc định của nền tảng.
+ 
+Các mức xác minh của chứng chỉ [2]
+Bảng 4.1. So sánh các mức xác minh chứng chỉ DV, OV, EV
+Mức
+Nội dung được xác minh
+Cấp phát
+Thường phù hợp khi
+DV
+Chỉ quyền kiểm soát tên miền
+Tự động, nhanh (ví dụ qua ACME); Let’s Encrypt cấp loại này
+Website và API công khai, môi trường phát triển/kiểm thử, hạ tầng cần cấp và gia hạn tự động quy mô lớn
+OV
+DV cộng thông tin về tổ chức
+Có bước xác minh tổ chức, thường lâu hơn DV
+Tổ chức muốn chứng chỉ gắn thông tin pháp nhân hoặc đối tác, kiểm toán có yêu cầu
+EV
+Quy trình xác minh tổ chức chặt chẽ nhất
+Xác minh kỹ, mất nhiều thời gian nhất
+Chính sách nội bộ bắt buộc mức xác minh cao nhất, đã cân nhắc chi phí so với lợi ích
+ 
+Phân tích của nhóm: chọn mức xác minh theo yêu cầu, không theo “độ mạnh” của mã hóa
+Ba mức khác nhau ở mức độ xác minh danh tính chủ sở hữu, không khác nhau ở thuật toán mã hóa: kênh dùng DV vẫn mã hóa và bảo đảm toàn vẹn như OV hoặc EV. DV là lựa chọn mặc định hợp lý khi mục tiêu là mã hóa và xác thực tên miền, nhất là khi cần tự động hóa; OV/EV chỉ đáng cân nhắc khi chính sách, hợp đồng hoặc kiểm toán yêu cầu.
+ 
+Bổ trợ cho HTTPS – HSTS (RFC 6797). Server yêu cầu trình duyệt luôn dùng HTTPS cho tên miền, chống hạ cấp xuống HTTP. Chính sách có hiệu lực sau khi trình duyệt nhận tiêu đề này ở lần truy cập thành công trước (hoặc khi tên miền nằm trong danh sách preload).
+4.1.2 Chứng chỉ Public CA và giao thức ACME
+-        Public CA là tổ chức chứng thực có CA gốc được các chương trình root (Mozilla, Apple, Microsoft, Google) đưa vào kho tin cậy và tuân thủ Baseline Requirements của CA/Browser Forum. Chuỗi thường gồm 3 tầng: CA gốc (offline) → CA trung gian (ký hằng ngày) → chứng chỉ server.
+-        Ba CA tiêu biểu: Let’s Encrypt (phi lợi nhuận, do ISRG vận hành, miễn phí, tự động hóa hoàn toàn); DigiCert (thương mại, mạnh ở OV/EV và giải pháp doanh nghiệp); Sectigo (thương mại, DV/OV/EV và quản lý chứng chỉ).
+-        ACME (RFC 8555) [9] tự động hóa việc xin cấp, xác minh quyền sở hữu tên miền, cấp và gia hạn. Quy trình: client tạo tài khoản (cặp khóa) → gửi order → CA đưa ra challenge → client hoàn thành, CA kiểm tra → client gửi CSR (finalize), CA ký và trả chứng chỉ.
+-        Các loại challenge: HTTP-01 (đặt tệp token tại /.well-known/acme-challenge/ trên cổng 80); DNS-01 (bản ghi TXT _acme-challenge.<tên miền>, bắt buộc cho wildcard); TLS-ALPN-01 (RFC 8737, chứng chỉ đặc biệt trên cổng 443); DNS-PERSIST-01 (đang được Let’s Encrypt cùng các bên phát triển để giảm việc cập nhật DNS mỗi lần xác minh, dự kiến cung cấp trong năm 2026 [S4]; cần kiểm tra lại thời điểm sẵn sàng thực tế).
+-        Công cụ phổ biến: Certbot, acme.sh, Caddy. Let’s Encrypt khuyến nghị dùng ACME Renewal Information (ARI) để chọn thời điểm gia hạn thay vì chu kỳ cố định [S4].
+Sự phổ cập của TLS nhờ Let’s Encrypt (số liệu từ blog chính thức [S1])
+-        Mốc phát hành: 14/09/2015 chứng chỉ đầu tiên; 03/2016 đạt 1 triệu; 06/2017 đạt 100 triệu; 2020 đạt 1 tỷ; 09/2018 lần đầu 1 triệu chứng chỉ/ngày; cuối 09/2025 vượt 10 triệu chứng chỉ/ngày. Tính năng mở rộng: tên miền quốc tế hóa (2016), wildcard (2018), chứng chỉ ngắn hạn và chứng chỉ cho địa chỉ IP (2025).
+-        Tỷ lệ lượt tải trang qua HTTPS (thống kê Firefox) tăng từ dưới 30% lên khoảng 80% trong khoảng 5 năm, tại Mỹ gần 95%; đây không phải tỷ lệ website. Số chứng chỉ đã phát hành cũng khác số website đang hoạt động vì chứng chỉ hết hạn và được thay thế định kỳ.
+-        Thời hạn mặc định hiện là 90 ngày. Lộ trình [S4]: từ 13/05/2026 hồ sơ tlsserver (tùy chọn) cấp chứng chỉ 45 ngày; từ 10/02/2027 hồ sơ classic (mặc định) chuyển sang 64 ngày; từ 16/02/2028 chuyển sang 45 ngày; thời gian tái sử dụng kết quả xác thực tên miền giảm từ 30 ngày xuống 7 giờ vào năm 2028.
+Phân tích của nhóm: tự động hóa cấp và gia hạn có ý nghĩa gì với vận hành
+Tự động hóa là điều kiện của quy mô. Hơn 10 triệu chứng chỉ mỗi ngày chỉ khả thi khi không cần người can thiệp; chi phí chứng chỉ đã gần bằng không, rủi ro còn lại là việc gia hạn có chạy được hay không.
+Trọng tâm vận hành dịch chuyển từ “xin cấp” sang “bảo đảm gia hạn không lỗi”: giám sát lỗi gia hạn, cảnh báo sớm, kiểm tra chuỗi chứng chỉ và tự động nạp lại cấu hình. Các điểm lỗi mới gồm cổng 80 bị chặn (HTTP-01), mất quyền API DNS (DNS-01), client ACME ngừng chạy sau nâng cấp; khi chứng chỉ ngắn hạn, sự cố nhỏ nhanh chóng thành sự cố hết hạn.
+Ảnh hưởng đến kiến trúc: số điểm phải gia hạn tăng theo số máy giữ chứng chỉ, là một lý do để quản lý chứng chỉ tập trung ở thiết bị đầu vào (mục 4.4); mô hình Passthrough đòi hỏi tự động hóa trên từng backend.
+ 
+Xu hướng rút ngắn thời hạn chứng chỉ (CA/Browser Forum, Ballot SC-081v3, thông qua 11/04/2025) [S2]
+-        Giới hạn áp dụng theo ngày phát hành chứng chỉ TLS công khai. Đến 12/10/2026, mốc 200 ngày đã có hiệu lực (từ 15/03/2026); mốc 100 ngày có hiệu lực từ 15/03/2027. Ballot cũng rút ngắn thời gian tái sử dụng xác thực tên miền, cuối cùng còn 10 ngày. Private CA nằm ngoài kho tin cậy công khai không bị ràng buộc trực tiếp, dù nhiều tổ chức chủ động áp dụng chính sách tương tự.
+Bảng 4.2. Lịch giảm thời hạn tối đa của chứng chỉ TLS công khai (SC-081v3)
+Chứng chỉ được phát hành
+Thời hạn tối đa
+Tái sử dụng xác thực tên miền tối đa
+Trước 15/03/2026
+398 ngày
+398 ngày
+Từ 15/03/2026 đến trước 15/03/2027
+200 ngày
+200 ngày
+Từ 15/03/2027 đến trước 15/03/2029
+100 ngày
+100 ngày
+Từ 15/03/2029
+47 ngày
+10 ngày
+ 
+Ghi chú: các mốc 398/200/100/47 và 10 ngày đối chiếu với trang ballot của CA/Browser Forum; giá trị tái sử dụng ở mốc 200 và 100 ngày lấy theo tổng hợp của Sectigo và SecureW2, cần đối chiếu thêm với Baseline Requirements.
+Phân tích của nhóm: vì sao gia hạn thủ công không còn khả thi
+Nếu gia hạn khi chứng chỉ đã qua khoảng hai phần ba vòng đời (cách Let’s Encrypt khuyến nghị [S4]), chứng chỉ 47 ngày phải gia hạn khoảng 11–12 lần mỗi năm, so với một đến hai lần ở mức 398 ngày (ước tính của nhóm, không phải số liệu của nguồn). Với hàng chục hoặc hàng trăm chứng chỉ, quy trình thủ công trở thành nguồn gây sự cố hết hạn; ACME hoặc cơ chế tự động tương đương là yêu cầu vận hành cơ bản.
+ 
+4.1.3 SNI (RFC 6066) và Virtual Hosting
+Vấn đề. Virtual Hosting là một máy chủ (một IP, cổng 443) phục vụ nhiều website. Với HTTP thường, server biết site nào nhờ tiêu đề Host; với HTTPS, chứng chỉ phải gửi trong bắt tay, trước khi có yêu cầu HTTP, nên server chưa biết nên trả chứng chỉ nào.
+Giải pháp: SNI (Server Name Indication) [8]. SNI là phần mở rộng server_name của TLS (RFC 6066, mục 3): client ghi tên miền vào ClientHello, server đọc SNI để chọn chứng chỉ và cấu hình tương ứng. Nhờ đó nhiều website HTTPS, mỗi site một chứng chỉ, cùng chạy trên một IP.
+Giới hạn về quyền riêng tư. SNI gửi ở dạng rõ nên bên quan sát vẫn thấy tên miền đang truy cập, kể cả với TLS 1.3. Encrypted Client Hello (ECH), chuẩn hóa trong RFC 9849 (IETF, Proposed Standard, 03/2026) [10], mã hóa ClientHello bằng khóa công khai của server (cấu hình thường công bố qua bản ghi DNS) để che SNI. ECH chưa che mọi thông tin: tên miền vẫn có thể lộ qua truy vấn DNS không mã hóa, địa chỉ IP đích vẫn thấy được, và mức che phủ còn phụ thuộc việc nhiều tên miền dùng chung IP và dịch vụ [10].
+Liên hệ mục 4.4. Vì SNI đọc được mà không cần giải mã, thiết bị Layer 4 có thể định tuyến lưu lượng theo tên miền; đây là cơ sở của TLS Passthrough.
+Phân tích của nhóm: ECH và định tuyến theo SNI
+Khi client dùng ECH, thiết bị trung gian chỉ thấy tên “bên ngoài” trong ClientHelloOuter. Theo mô hình “client-facing server” và “backend server” của RFC 9849, muốn định tuyến Passthrough theo tên miền thật khi bật ECH thì chính thiết bị đầu vào phải đóng vai client-facing server (giải mã được phần ECH). Vì vậy thiết kế định tuyến theo SNI ở mục 4.4 cần xem xét lại nếu hệ thống dự định hỗ trợ ECH.
+ 
+4.1.4 SSL Pinning
+Khái niệm và mục đích. Client chỉ chấp nhận một chứng chỉ hoặc khóa công khai đã “ghim” sẵn thay vì tin mọi chứng chỉ do bất kỳ CA nào trong kho tin cậy cấp, nhằm chống MITM khi CA bị xâm phạm hoặc cấp nhầm chứng chỉ giả. Ví dụ lịch sử: năm 2011, DigiNotar bị xâm nhập và cấp chứng chỉ giả cho tên miền của Google, một lý do thúc đẩy pinning [2]. Cách hoạt động: ứng dụng nhúng sẵn giá trị đã ghim; khi bắt tay TLS so sánh với chứng chỉ nhận được; khớp thì tiếp tục, không khớp thì ngắt kết nối.
+Bảng 4.3. Các đối tượng có thể ghim trong SSL Pinning
+Đối tượng ghim
+Mức ràng buộc
+Gánh nặng cập nhật
+Phù hợp khi
+Chứng chỉ lá của server
+Chặt nhất
+Cao: phải cập nhật mỗi lần gia hạn
+Tự kiểm soát cả server lẫn ứng dụng, gia hạn ít, phát hành ứng dụng nhanh
+Khóa công khai (hash SPKI)
+Chặt, linh hoạt hơn
+Trung bình: giữ nguyên nếu gia hạn không đổi khóa
+Ứng dụng di động hoặc tùy biến; nên kèm khóa dự phòng (backup pin)
+Chứng chỉ CA trung gian
+Thấp hơn
+Thấp hơn, nhưng đổi khi CA đổi chuỗi
+Cần linh hoạt khi gia hạn, chấp nhận ràng buộc lỏng hơn
+ 
+Rủi ro và lưu ý. Ghim sai hoặc quên cập nhật có thể khiến ứng dụng không kết nối được, nên ghim thêm khóa dự phòng và có cơ chế cập nhật ứng dụng. HPKP (RFC 7469) trên trình duyệt đã bị các trình duyệt chính gỡ bỏ do nguy cơ tự khóa truy cập; pinning hiện chủ yếu dùng trong ứng dụng di động và tùy biến. Chứng chỉ ngày càng ngắn hạn khiến việc ghim chứng chỉ lá khó duy trì. Pinning không bảo vệ nếu thiết bị client đã bị kẻ tấn công kiểm soát.
+Phân tích của nhóm: chọn đối tượng ghim
+Với ứng dụng di động gọi API do chính tổ chức vận hành, ghim hash SPKI kèm ít nhất một khóa dự phòng là điểm cân bằng hợp lý giữa độ chặt và rủi ro tự khóa. Ghim CA trung gian chỉ nên dùng khi chấp nhận ràng buộc lỏng vì CA công khai có thể đổi chuỗi: Let’s Encrypt đã công bố chuyển hồ sơ mặc định sang hệ thống CA gốc và trung gian mới (“Generation Y”) từ 13/05/2026 [S5], ứng dụng ghim vào chuỗi cũ sẽ phải cập nhật. Cần chuẩn bị quy trình cập nhật pin trước khi triển khai pinning, không làm sau.
+ 
+4.2 Xác thực hai chiều (mTLS) và Zero Trust TLS
+Nguyên lý. Trong mTLS (mutual TLS), cả hai bên cùng xuất trình chứng chỉ và xác minh lẫn nhau: client biết server là ai, và server biết client là ai ngay ở tầng TLS. Ở TLS 1.3, server yêu cầu chứng chỉ client bằng CertificateRequest (gửi trước Certificate của server); client trả lời bằng Certificate và CertificateVerify, rồi Finished [5].
+4.2.1 Kịch bản: Microservices/Kubernetes/Service Mesh, B2B tài chính, Bastion Host
+- Microservices/Service Mesh: nhiều dịch vụ gọi nhau liên tục (lưu lượng “đông-tây”), mỗi dịch vụ cần biết ai đang gọi mình. Service Mesh (Istio, Linkerd) đặt proxy sidecar cạnh mỗi dịch vụ để tự thực hiện mTLS mà không sửa mã ứng dụng. Danh tính dịch vụ thường theo chuẩn SPIFFE (spiffe://<trust-domain>/<đường dẫn>), mang trong chứng chỉ X.509 ngắn hạn, tự động cấp và xoay vòng [S3].
+- B2B tài chính: hai tổ chức cần xác định chắc chắn danh tính đối tác. Open Banking/PSD2 ở châu Âu dùng chứng chỉ eIDAS (QWAC) để bên thứ ba và ngân hàng xác thực lẫn nhau; RFC 8705 chuẩn hóa xác thực client OAuth 2.0 bằng mTLS và gắn access token với chứng chỉ client, giúp token bị đánh cắp cũng không dùng được [12].
+- Bastion Host: điểm truy cập duy nhất, được giám sát chặt, để vào mạng nội bộ. mTLS bảo đảm chỉ thiết bị/người có chứng chỉ do CA của tổ chức cấp mới kết nối được, client biết mình nói chuyện với đúng bastion, và có thể thu hồi quyền bằng cách thu hồi chứng chỉ.
+Điểm chung. Hai đầu kết nối đều là hệ thống hoặc đối tác đã biết trước nên việc cấp chứng chỉ cho cả hai phía là khả thi; nên dùng Private CA để cấp chứng chỉ client. Thông tin nền: từ năm 2026, các CA công khai lớn lần lượt ngừng đưa clientAuth (Extended Key Usage) vào chứng chỉ TLS công khai theo định hướng của Chrome Root Program, mốc cụ thể khác nhau giữa các CA [S8]; đây là nguồn tổng hợp thứ cấp, cần đối chiếu với chính sách chính thức của Chrome Root Program và CA đang dùng.
+Phân tích của nhóm: vì sao mTLS nên dùng Private CA
+Dùng chứng chỉ công khai làm chứng chỉ client trước đây tiện, nhưng nay có nguy cơ “gãy lặng lẽ”: chứng chỉ gia hạn xong không còn clientAuth thì bắt tay mTLS thất bại. Private CA cho phép tự quy định EKU, thời hạn và chính sách thu hồi, tách xác thực nội bộ khỏi thay đổi của hệ sinh thái chứng chỉ công khai; đổi lại tổ chức phải tự vận hành PKI (cấp, xoay vòng, thu hồi, bảo vệ khóa CA).
+ 
+4.2.2 Quy trình mTLS qua 7 bước
+1.   Certificate Request: mỗi bên tạo cặp khóa và gửi CSR (PKCS#10, RFC 2986) cho CA, kèm danh tính cần chứng nhận.
+2.   Cấp chứng chỉ: CA xác minh và ký chứng chỉ cho từng bên, với Extended Key Usage phù hợp: serverAuth cho server, clientAuth cho client [7].
+3.   ClientHello: client gửi phiên bản TLS, bộ mã hóa, SNI và key_share.
+4.   ServerHello: server chọn tham số, gửi key_share; từ đây các thông điệp bắt tay còn lại được mã hóa.
+5.   Server xuất trình chứng chỉ và yêu cầu chứng chỉ client: server gửi EncryptedExtensions, CertificateRequest (điểm khác biệt so với TLS một chiều), Certificate, CertificateVerify, Finished.
+6.   Client xác minh server và gửi chứng chỉ của mình: nếu hợp lệ, client gửi Certificate và CertificateVerify (khi được yêu cầu và có chứng chỉ phù hợp), rồi Finished.
+7.   Server xác minh client và kích hoạt phiên mã hóa: kiểm tra chuỗi tin cậy, thời hạn, clientAuth, trạng thái thu hồi; ánh xạ danh tính (SAN/CN/SPIFFE ID) sang quyền truy cập. Không hợp lệ thì gửi alert và đóng kết nối; hợp lệ thì hai bên dùng khóa phiên để mã hóa dữ liệu.
+Tóm tắt: bước 1–2 chuẩn bị chứng chỉ; bước 3–6 bắt tay và xác thực hai chiều; bước 7 kênh mã hóa chính thức hoạt động. Đây là luồng khái quát của TLS 1.3; thực tế có thể khác khi server không yêu cầu chứng chỉ client, khôi phục phiên bằng PSK, HelloRetryRequest, post-handshake authentication, client không có chứng chỉ phù hợp, hoặc dùng TLS 1.2.
+
+Hình 4.1. Luồng bắt tay mTLS (TLS 1.3). Thông điệp màu cam là phần bổ sung so với TLS một chiều. * Cơ chế kiểm tra thu hồi phụ thuộc nền tảng và chính sách triển khai.
+Lưu ý vận hành. Cần tự động hóa cấp, xoay vòng và thu hồi chứng chỉ client ở quy mô lớn; lưu khóa riêng của client ở nơi an toàn (kho khóa hệ điều hành, thẻ thông minh, HSM). Ở TLS 1.3, chứng chỉ client nằm trong phần bắt tay đã mã hóa nên không lộ cho bên quan sát, khác với TLS 1.2.
+4.2.3 Hạn chế của bảo vệ theo chu vi (Perimeter Security) và Lateral Movement
+Mô hình chu vi (“lâu đài và hào nước”) dựng vành đai (tường lửa, VPN) quanh mạng nội bộ với giả định ngoài là không đáng tin, trong là đáng tin [13]. Hạn chế: khi kẻ tấn công vượt vành đai (lừa đảo, đánh cắp thông tin VPN, khai thác lỗ hổng), phần lớn hệ thống bên trong mặc định tin nhau; mạng phẳng, ít phân đoạn; ranh giới mờ dần do làm việc từ xa, đám mây, thiết bị cá nhân; lưu lượng nội bộ thường không mã hóa và ít được kiểm tra.
+Lateral Movement (di chuyển ngang) là chiến thuật sau xâm nhập: di chuyển từ hệ thống này sang hệ thống khác để mở rộng quyền kiểm soát (MITRE ATT&CK, TA0008). Chuỗi hệ quả: vành đai bị vượt tại một điểm → các hệ thống bên trong tin nhau mặc định → kẻ tấn công di chuyển ngang → thiệt hại vượt xa điểm xâm nhập ban đầu. Vì vậy cần kiểm soát cả giao tiếp bên trong mạng.
+4.2.4 Nguyên tắc “không bao giờ tin tưởng, luôn xác minh” và vai trò của mTLS
+Zero Trust. Vị trí trong mạng không còn là căn cứ tin cậy; mọi yêu cầu truy cập đều phải được xác minh. NIST SP 800-207 (2020) nêu 7 nguyên tắc cốt lõi [13]: (1) mọi nguồn dữ liệu và dịch vụ đều là tài nguyên; (2) mọi liên lạc được bảo vệ bất kể vị trí mạng; (3) quyền truy cập cấp theo từng phiên; (4) chính sách động quyết định quyền truy cập; (5) giám sát và đo lường mức an toàn của mọi tài sản; (6) xác thực và phân quyền động, thực thi nghiêm ngặt trước khi cho truy cập; (7) thu thập thông tin hiện trạng để cải thiện an ninh.
+Vai trò của mTLS. mTLS đáp ứng trực tiếp nguyên tắc 2 (mã hóa mọi kết nối, kể cả nội bộ), xác minh danh tính hai chiều cho từng kết nối (nền tảng cho nguyên tắc 3 và 6), và hạn chế lateral movement vì kẻ tấn công không có chứng chỉ hợp lệ thì không tự do kết nối sang hệ thống khác. Sách Zero Trust Networks nhấn mạnh xác thực cả thiết bị lẫn người dùng bằng chứng chỉ [4]. Giới hạn: mTLS chỉ trả lời “ai đang kết nối”, chưa trả lời “được phép làm gì”; cần thêm phân quyền, chính sách động và giám sát (nguyên tắc 4, 5, 7). mTLS là một thành phần của Zero Trust, không phải toàn bộ.
+Bảng 4.4. So sánh bảo vệ theo chu vi và Zero Trust với mTLS
+Tiêu chí
+Bảo vệ theo chu vi
+Zero Trust với mTLS
+Căn cứ tin cậy
+Vị trí trong hoặc ngoài mạng
+Danh tính được xác minh
+Giao tiếp nội bộ
+Mặc định tin tưởng
+Luôn xác minh và mã hóa
+Khi một điểm bị xâm nhập
+Dễ để sự cố lan rộng
+Giới hạn phạm vi lan, nếu chính sách phân quyền cũng được thực thi
+Chi phí và năng lực vận hành
+Thấp hơn ở giai đoạn đầu
+Cao hơn: cần PKI, tự động hóa cấp và xoay vòng chứng chỉ, giám sát
+ 
+Phân tích của nhóm: khi nào Zero Trust với mTLS đáng đầu tư
+Mô hình này phù hợp hơn khi có nhiều dịch vụ gọi nhau, hạ tầng trải trên đám mây hoặc nhiều vùng mạng, dữ liệu nhạy cảm, và tổ chức có hoặc xây được năng lực tự động hóa PKI (Service Mesh, công cụ quản lý chứng chỉ). Với hệ thống nhỏ, ít thay đổi, một vành đai phân đoạn tốt vẫn là điểm khởi đầu hợp lý. Rủi ro: nếu không tự động hóa được vòng đời chứng chỉ, chính mTLS có thể thành điểm lỗi khi một chứng chỉ hết hạn làm ngưng cả luồng dịch vụ. Chu vi và Zero Trust không loại trừ nhau: vành đai vẫn hữu ích như một lớp phòng thủ chiều sâu.
+ 
+4.3 SSL/TLS VPN, IoT và công nghiệp TLS
+4.3.1 SSL/TLS VPN, WireGuard và IPsec: so sánh các giải pháp VPN
+VPN tạo đường hầm bảo mật để người dùng hoặc chi nhánh truy cập mạng nội bộ qua Internet. Trong ba giải pháp so sánh dưới đây, chỉ SSL/TLS VPN dựa trên TLS; IPsec và WireGuard dùng giao thức riêng.
+-        SSL/TLS VPN [15] dùng TLS, thường trên TCP/443. NIST SP 800-113 chia thành *portal VPN* (đăng nhập cổng web qua trình duyệt, không cần cài phần mềm) và *tunnel VPN* (trình duyệt hoặc client tạo đường hầm cho nhiều ứng dụng). Ưu điểm: dễ vượt tường lửa/proxy, kiểm soát theo ứng dụng, xác thực bằng chứng chỉ, mật khẩu, MFA. Hạn chế: tunnel TCP trong TCP giảm hiệu năng khi mất gói, nên một số giải pháp thêm kênh DTLS/UDP.
+-        IPsec [16] hoạt động ở tầng mạng (Layer 3), kiến trúc theo RFC 4301. Gồm IKEv2 (RFC 7296; UDP 500, UDP 4500 khi có NAT-T) để thương lượng khóa và ESP (RFC 4303; giao thức IP số 50) để mã hóa, xác thực gói tin; có chế độ transport và tunnel (dùng cho site-to-site). Ưu điểm: trong suốt với ứng dụng, phù hợp kết nối giữa các mạng. Hạn chế: cấu hình phức tạp; cổng và giao thức đặc thù dễ bị tường lửa hoặc NAT chặn.
+-        WireGuard [18] là VPN hiện đại (J. Donenfeld, NDSS 2017): chạy trên UDP (thường cổng 51820), mã nguồn rất gọn (dưới khoảng 4.000 dòng theo bài báo gốc) nên dễ kiểm toán, dùng bộ mật mã cố định Curve25519, ChaCha20-Poly1305, BLAKE2s, tích hợp vào nhân Linux từ 5.6. Lưu ý: WireGuard dùng khung Noise riêng, không dựa trên TLS; nói chặt chẽ, nó là VPN hiện đại để so sánh với SSL/TLS VPN và IPsec, không phải một SSL/TLS VPN.
+Bảng 4.5. So sánh SSL/TLS VPN, IPsec và WireGuard
+Tiêu chí
+SSL/TLS VPN
+IPsec
+WireGuard
+Nền tảng giao thức
+TLS (có thể thêm DTLS)
+IKEv2 + ESP
+Noise (không dựa trên TLS)
+Tầng hoạt động
+Vận chuyển/ứng dụng
+Mạng (Layer 3)
+Mạng (giao diện ảo)
+Giao thức/cổng
+TCP 443 (thường)
+UDP 500/4500 và ESP (IP 50)
+UDP, cổng tùy chọn (thường 51820)
+Qua tường lửa/NAT
+Thuận lợi nhất khi TCP 443 được mở; proxy hoặc kiểm tra sâu vẫn có thể chặn
+Dễ gặp trở ngại do cổng và giao thức đặc thù
+Cần cho phép UDP cổng đã chọn
+Độ phức tạp cấu hình
+Thấp
+Cao
+Thấp
+Kiểm soát truy cập
+Theo từng ứng dụng (tùy sản phẩm)
+Theo mạng/chính sách IPsec
+Theo từng peer và dải địa chỉ được phép
+Quản lý danh tính người dùng
+Chứng chỉ, mật khẩu, MFA (tùy sản phẩm)
+Chứng chỉ hoặc khóa chia sẻ trước
+Khóa công khai theo từng peer; quy mô lớn cần công cụ ngoài
+ 
+Phân tích của nhóm: chọn giải pháp VPN theo điều kiện, không có giải pháp “tốt nhất”
+SSL/TLS VPN phù hợp khi người dùng ở nhiều môi trường mạng không kiểm soát được (khách sạn, quán cà phê), cần truy cập từng ứng dụng thay vì cả mạng, hoặc cần tích hợp MFA và cổng web. IPsec phù hợp cho kết nối cố định giữa chi nhánh hoặc trung tâm dữ liệu, khi thiết bị đa hãng đã hỗ trợ sẵn và đội vận hành đủ kinh nghiệm. WireGuard phù hợp khi tổ chức kiểm soát cả hai đầu, cần cấu hình đơn giản, hiệu năng tốt và UDP được phép; cần bù phần quản lý khóa và danh tính ở quy mô lớn.
+Tiêu chí quyết định là môi trường mạng của người dùng, mức kiểm soát thiết bị đầu cuối và năng lực vận hành, không chỉ độ mạnh của mật mã. VPN kiểu truy cập cả mạng vẫn mang tính mô hình chu vi (mục 4.2.3) nếu không kèm phân quyền chi tiết.
+ 
+Lợi thế đi qua cổng 443. Cổng 443 là cổng HTTPS nên hầu như luôn mở ở mạng văn phòng, khách sạn, quán cà phê, nên VPN trên 443 đi qua được nhiều tường lửa chỉ cho phép lưu lượng web. Tuy nhiên điều này không có nghĩa là bỏ qua chính sách bảo mật, và proxy TLS hoặc thiết bị kiểm tra sâu vẫn có thể nhận diện hoặc chặn.
+4.3.2 IoT: MQTTS (cổng 8883) và DTLS (RFC 6347)
+Thiết bị IoT thường hạn chế CPU, bộ nhớ, pin nhưng vẫn cần truyền dữ liệu an toàn. Có hai hướng chính: giao thức nhắn tin trên TCP (MQTT trên TLS) và giao thức trên UDP (dùng DTLS).
+-        MQTTS [19]. MQTT là giao thức publish/subscribe nhẹ, chuẩn OASIS (v3.1.1 năm 2014, v5.0 năm 2019). Cổng đăng ký: 1883 (không mã hóa) và 8883 (MQTT trên TLS, MQTTS). Thiết bị xác minh chứng chỉ broker, có thể dùng mTLS để broker xác thực thiết bị, và dữ liệu cảm biến, lệnh điều khiển được mã hóa. Lưu ý: lưu chứng chỉ trên thiết bị (nên dùng phần cứng an toàn), đồng hồ thiết bị phải đúng để kiểm tra thời hạn, dùng session resumption để giảm chi phí bắt tay.
+-        DTLS (RFC 6347) [11] là TLS cho giao thức không kết nối (UDP): DTLS 1.2 (RFC 6347, 2012, dựa trên TLS 1.2) và DTLS 1.3 (RFC 9147, 2022, dựa trên TLS 1.3). So với TLS, DTLS bổ sung số thứ tự và epoch trong mỗi bản ghi (vì UDP có thể mất hoặc đảo gói), cơ chế gửi lại khi bắt tay mất gói, trao đổi cookie để giảm nguy cơ từ chối dịch vụ và khuếch đại, và cửa sổ chống phát lại. Ứng dụng tiêu biểu: CoAP (RFC 7252) bảo vệ bằng DTLS (CoAPS, cổng 5684/UDP); WebRTC dùng DTLS-SRTP (RFC 5764).
+Bảng 4.6. So sánh MQTTS (TLS trên TCP) và DTLS (trên UDP)
+Tiêu chí
+MQTTS
+DTLS (ví dụ CoAPS)
+Nền truyền tải
+TCP
+UDP
+Mô hình điển hình
+Xuất bản/đăng ký qua broker
+Yêu cầu/phản hồi trực tiếp (CoAP), hoặc truyền thời gian thực
+Cổng thường gặp
+8883/TCP
+5684/UDP (CoAPS)
+Xử lý mất gói
+Do TCP bảo đảm, có thể tăng độ trễ khi mất gói
+DTLS tự gửi lại khi bắt tay; độ tin cậy dữ liệu do tầng ứng dụng quyết định
+Bảo mật
+Mã hóa và xác thực theo TLS
+Theo cơ chế của TLS, thêm chống phát lại và cookie
+ 
+Phân tích của nhóm: chọn giữa MQTTS và DTLS
+MQTTS phù hợp khi thiết bị duy trì kết nối lâu dài tới một broker, nhiều thiết bị và chủ đề giao tiếp qua trung gian, và broker đã hỗ trợ TLS. DTLS/CoAPS phù hợp khi thiết bị rất hạn chế tài nguyên, mạng hay mất gói hoặc gói ngắn, truy vấn trực tiếp tới thiết bị, hoặc cần truyền thời gian thực qua UDP. Với cả hai, vấn đề dài hạn là vòng đời chứng chỉ trên thiết bị: chứng chỉ thiết bị thường cấp từ Private CA (không bị ràng buộc trực tiếp bởi lịch rút ngắn ở mục 4.1.2) nhưng vẫn cần cơ chế cập nhật chứng chỉ và đồng hồ chính xác trên thiết bị ngoài hiện trường.
+ 
+4.4 TLS Termination và TLS Passthrough
+Khi trước các server backend có thiết bị đầu vào (load balancer, reverse proxy, API gateway), cần quyết định kết nối TLS của client kết thúc ở đâu. Hai mô hình đối lập: Termination (Client → [TLS] → thiết bị đầu vào giải mã → [HTTP hoặc TLS mới] → Backend) và Passthrough (Client → [TLS] → thiết bị đầu vào chỉ chuyển tiếp → [TLS] → Backend giải mã).
+
+Hình 4.2. Ba kiến trúc triển khai TLS: (a) Termination với HTTP phía sau, (b) Termination có mã hóa lại, (c) Passthrough.
+4.4.1 TLS Termination/Offloading
+Cách hoạt động. Thiết bị đầu vào giữ chứng chỉ và khóa riêng, kết thúc TLS với client và giải mã lưu lượng, rồi chuyển đến backend bằng HTTP không mã hóa (offloading thuần) hoặc mở kết nối TLS mới tới backend (re-encryption).
+Ưu điểm.
+• Tập trung bắt tay TLS ở thiết bị đầu vào, để backend dành tài nguyên cho nghiệp vụ. Đây là phân bổ lại tải mật mã chứ không nhất thiết giảm tổng tải (mã hóa lại thêm một chặng TLS); hiệu quả phụ thuộc cấu hình (giữ kết nối lâu dài, khôi phục phiên, tăng tốc phần cứng) nên cần đo thay vì giả định.
+• Quản lý tập trung chứng chỉ và cấu hình TLS; gia hạn ACME chỉ cần làm một nơi.
+• WAF/IDS đọc được nội dung (URL, tiêu đề, nội dung yêu cầu); hỗ trợ định tuyến theo tầng ứng dụng, nén, bộ nhớ đệm, ghi log chi tiết.
+Hạn chế và điều kiện dùng an toàn.
+• Đoạn sau thiết bị đầu vào chỉ được bảo vệ khi có mã hóa lại phù hợp. Ở offloading thuần, đoạn này là bản rõ nên kẻ tấn công vào được mạng nội bộ có thể đọc hoặc sửa dữ liệu. Ở re-encryption, thiết bị đầu vào phải xác minh chứng chỉ backend (không tắt kiểm tra) và dùng phiên bản, bộ mã hóa hợp lý.
+• Thiết bị đầu vào là điểm nhạy cảm: nắm khóa riêng, thấy toàn bộ bản rõ và thường nằm trong phạm vi tuân thủ cần đánh giá; cần bảo vệ khóa (ưu tiên HSM/dịch vụ quản lý khóa), hạn chế quyền quản trị, vá lỗi kịp thời, giám sát truy cập, tránh ghi dữ liệu nhạy cảm vào log.
+• Mất ngữ cảnh mTLS: backend không thấy chứng chỉ client gốc, thường nhận qua tiêu đề HTTP (ví dụ X-Forwarded-Client-Cert) nên phải tin hoàn toàn vào thiết bị đầu vào, đồng thời thiết bị đầu vào phải xóa hoặc ghi đè tiêu đề cùng tên do client gửi.
+4.4.2 TLS Passthrough (Layer 4, định tuyến theo SNI)
+Cách hoạt động. Thiết bị đầu vào hoạt động ở Layer 4: không giải mã, không giữ khóa riêng, chỉ chuyển tiếp các byte TLS. Để biết gửi đến backend nào, nó đọc SNI trong ClientHello (dạng rõ, mục 4.1.3) và định tuyến theo tên miền; backend thực hiện toàn bộ bắt tay TLS và giải mã. Ví dụ: Nginx (stream với ssl_preread), HAProxy (chế độ tcp, định tuyến theo SNI), AWS Network Load Balancer (TCP listener).
+Ưu điểm.
+• TLS xuyên suốt từ client đến backend: nếu thiết bị đầu vào bị xâm phạm, kẻ tấn công không đọc được nội dung mã hóa, nhưng vẫn quan sát được siêu dữ liệu (địa chỉ, cổng, SNI, dung lượng) và có thể gây gián đoạn.
+• Hỗ trợ tuân thủ PCI DSS nhưng không tự bảo đảm [21]: Yêu cầu 4 của PCI DSS (hiện hành v4.0.1; v4.0 ngừng hiệu lực từ 31/12/2024) đòi hỏi bảo vệ dữ liệu chủ thẻ bằng mật mã mạnh khi truyền qua mạng công cộng. Passthrough giữ TLS đến backend nên dữ liệu thẻ không xuất hiện dạng rõ ở thiết bị trung gian, nhưng chỉ đáp ứng khi backend cấu hình TLS phù hợp, quản lý chứng chỉ và khóa đúng, kiểm soát truy cập, ghi log, và có biện pháp bảo vệ ứng dụng web công khai (ví dụ yêu cầu 6.4.2 thường đáp ứng bằng WAF).  Phạm vi do đơn vị đánh giá xác nhận.
+• Giữ nguyên mTLS: backend thấy trực tiếp chứng chỉ client.
+Hạn chế. Backend gánh tải mật mã và cần dự phòng CPU; WAF tại biên không soi được lưu lượng mã hóa, nếu cần phải đặt WAF sau điểm giải mã; chứng chỉ phân tán, mỗi backend phải có và gia hạn riêng; mất IP client ở backend nếu không dùng PROXY protocol (v1/v2 của HAProxy); giám sát và log chỉ ở tầng 4 (địa chỉ, cổng, SNI, dung lượng); phụ thuộc SNI đọc được nên cần thiết kế lại nếu client dùng ECH (mục 4.1.3).
+Bảng 4.7. So sánh TLS Termination và TLS Passthrough
+Tiêu chí
+Termination
+Passthrough
+Nơi giải mã
+Tại thiết bị đầu vào
+Tại backend
+Tầng xử lý
+Có thể hiểu nội dung (Layer 7)
+Layer 4, định tuyến theo SNI
+Tải mật mã
+Tập trung ở thiết bị đầu vào (tổng tải tùy cấu hình, cần đo)
+Phân tán ở từng backend
+Chứng chỉ và khóa
+Quản lý tập trung, khóa nằm ở thiết bị đầu vào
+Phân tán ở từng backend
+WAF/IDS tại biên
+Đọc được nội dung
+Không soi được nội dung
+Đoạn sau thiết bị đầu vào
+Bản rõ nếu offloading thuần; chỉ được bảo vệ khi mã hóa lại đúng cấu hình
+TLS tiếp tục tới backend
+mTLS
+Thiết bị đầu vào xác thực; backend nhận thông tin qua tiêu đề hoặc mTLS lại
+Backend thấy trực tiếp chứng chỉ client
+Điểm nhạy cảm
+Thiết bị đầu vào (giữ khóa, thấy bản rõ)
+Từng backend (giữ khóa); thiết bị đầu vào không giữ khóa
+Liên quan tuân thủ (ví dụ PCI DSS)
+Thiết bị đầu vào và đoạn sau nó thường nằm trong phạm vi đánh giá
+Giảm số thành phần thấy bản rõ, nhưng không tự bảo đảm tuân thủ
+ 
+Phân tích của nhóm: điều kiện nào khiến mỗi mô hình phù hợp hơn
+Termination phù hợp hơn khi cần WAF/IDS, định tuyến theo đường dẫn, bộ nhớ đệm hoặc log tầng ứng dụng; khi muốn quản lý chứng chỉ một nơi; và khi bảo vệ tốt được thiết bị đầu vào và cấu hình đúng mã hóa lại. Offloading thuần chỉ nên dùng khi mạng nội bộ được kiểm soát rất chặt và chấp nhận rủi ro bản rõ.
+Passthrough phù hợp hơn khi yêu cầu chính là không để thiết bị trung gian thấy bản rõ, backend phải thấy trực tiếp chứng chỉ client, hoặc chính sách không cho giải mã ở biên; đổi lại phải tự động hóa chứng chỉ trên từng backend, có biện pháp bù cho WAF và chấp nhận giám sát ở tầng 4.
+Kết hợp (Termination ở biên, mã hóa lại và dùng mTLS giữa thiết bị đầu vào với backend) giữ được khả năng giám sát và bảo vệ đoạn nội bộ, phù hợp Zero Trust (mục 4.2); tuy vậy thiết bị đầu vào vẫn thấy bản rõ nên phải bảo vệ như tài sản nhạy cảm, và chi phí tăng do có thêm một lớp PKI nội bộ. Câu hỏi đúng không phải “mô hình nào tốt hơn” mà là: ai được phép thấy bản rõ, và tổ chức có đủ năng lực bảo vệ điểm đó hay không.
+ 
+4.4.3 Tình huống lựa chọn kiến trúc
+Giả định. Đây là tình huống minh họa do nhóm xây dựng; tên miền và số lượng chỉ mang tính ví dụ, không phải số liệu đo thực tế. Công ty thương mại điện tử cỡ vừa vận hành cụm máy chủ riêng, đội vận hành nhỏ (khoảng 3 người), dùng chứng chỉ Let’s Encrypt cho tên miền công khai và một Private CA nội bộ. Ba nhóm lưu lượng cùng vào cổng 443:
+A. shop.example.vn: website bán hàng, cần WAF, bộ nhớ đệm, định tuyến theo đường dẫn.
+B. api.partner.example.vn: API cho đối tác logistics và thanh toán, xác thực bằng chứng chỉ client do Private CA cấp (mTLS), cần giới hạn tốc độ và lọc yêu cầu bất thường.
+C. pay.example.vn: dịch vụ thanh toán tự xử lý dữ liệu thẻ, cần hạn chế tối đa số thành phần thấy bản rõ.
+Quyết định. Nhóm đề xuất một thiết bị đầu vào định tuyến theo SNI nhưng áp dụng chế độ khác nhau cho từng nhóm (Hình 4.3 và Bảng 4.8).
+
+Hình 4.3. Kiến trúc đề xuất: cùng một cổng 443, ba chế độ xử lý TLS khác nhau theo tên miền.
+Bảng 4.8. Lựa chọn kiến trúc cho từng luồng lưu lượng
+Luồng
+Yêu cầu then chốt
+Lựa chọn
+Lý do
+Điều kiện/rủi ro cần xử lý
+A. Website
+WAF, cache, gia hạn chứng chỉ tập trung
+Termination + mã hóa lại
+Cần soi nội dung Layer 7; chỉ một điểm cần gia hạn ACME
+Bảo vệ khóa riêng ở biên; xác minh chứng chỉ backend; chặn truy cập trực tiếp vào backend
+B. API đối tác (mTLS)
+Xác thực đối tác, giới hạn tốc độ, lọc yêu cầu
+Termination tại biên có xác thực mTLS + mã hóa lại
+Biên xác minh chứng chỉ client rồi áp chính sách và chuyển danh tính cho backend
+Backend chỉ tin tiêu đề danh tính từ biên; biên xóa/ghi đè tiêu đề do client gửi; chuyển sang Passthrough nếu backend hoặc đối tác bắt buộc tự xác minh chứng chỉ
+C. Thanh toán
+Ít thành phần thấy bản rõ; mTLS tới backend
+Passthrough (định tuyến theo SNI)
+Biên không giữ khóa và không giải mã dữ liệu thẻ
+Mất WAF ở biên nên cần biện pháp bù sau điểm giải mã; chứng chỉ trên từng node (cần tự động hóa); PROXY protocol để giữ IP client; phạm vi PCI DSS do đơn vị đánh giá xác nhận
+ 
+Phân tích của nhóm: vì sao tách theo SNI
+Vì sao không chọn một chế độ cho tất cả: Termination cho mọi luồng sẽ để thiết bị đầu vào thấy dữ liệu thẻ; Passthrough cho mọi luồng sẽ mất WAF và bộ nhớ đệm của website và buộc đội 3 người gia hạn chứng chỉ trên nhiều máy. Tách theo SNI cho phép đặt mức bảo vệ theo độ nhạy cảm của từng luồng.
+Cái giá phải trả: cấu hình biên phức tạp hơn, hai mô hình quản lý chứng chỉ song song (tập trung cho A và B, phân tán cho C), và cần kiểm thử để tên miền C không vô tình bị Termination.
+Điều kiện làm thay đổi quyết định: nếu chuyển sang trang thanh toán của nhà cung cấp cổng thanh toán (dữ liệu thẻ không đi qua hệ thống), luồng C có thể bỏ và phạm vi tuân thủ thu hẹp đáng kể; nếu WAF bắt buộc kiểm tra lưu lượng thanh toán, cần điểm giải mã riêng được bảo vệ chặt thay vì Passthrough thuần; nếu client dùng ECH, cần xem lại định tuyến theo SNI (mục 4.1.3).
+ 
+ 
+
+CHƯƠNG 5. MÔ PHỎNG SỰ CỐ LỘ KHÓA RIÊNG CA
+Chương này mô phỏng việc kẻ tấn công chiếm được khóa riêng của một CA trung gian trong PKI thử nghiệm. Mục tiêu là quan sát vì sao chứng chỉ giả vẫn có thể vượt qua kiểm tra chuỗi tin cậy, đánh giá hậu quả và thực hành quy trình ứng phó, thu hồi.
+5.1 Kịch bản sự cố và hậu quả
+Giả sử hệ thống có chuỗi Root CA → Intermediate CA → chứng chỉ máy chủ. Root CA được giữ an toàn; khóa riêng intermediate.key bị lộ. Kẻ tấn công dùng khóa này ký một chứng chỉ mới cho payroll.lab. Nếu máy khách tin Root CA, chứng chỉ giả có chuỗi chữ ký hợp lệ và có thể được chấp nhận khi kẻ tấn công còn kiểm soát được DNS, định tuyến hoặc một điểm trung gian để đưa chứng chỉ đó tới máy khách. RFC 5280 cảnh báo khóa ký CA bị chiếm có thể dùng để phát hành chứng chỉ và CRL giả; khi xác nhận sự cố, các chứng chỉ do CA bị chiếm khóa phát hành phải bị thu hồi. [22]
+Bản thân việc lộ khóa ký CA không làm lộ khóa phiên của các kết nối TLS đã ghi nhận. Rủi ro trực tiếp là giả mạo danh tính và bắt tay trong tương lai; nếu kẻ tấn công xen được vào đường truyền, họ có thể thiết lập các phiên riêng với hai đầu. Với TLS 1.3, khóa ký dài hạn bị lộ vẫn làm mất khả năng xác thực cho các bắt tay mới, nhưng không tự suy ra các khóa phiên lịch sử từ khóa CA. [26]
+Bảng 5.1. Phân biệt sự cố khóa CA và khóa máy chủ
+Tài sản bị lộ
+Tác động chính
+Thu hồi và khôi phục
+Khóa riêng Intermediate CA
+Có thể ký chứng chỉ lá trái phép và CRL giả; ảnh hưởng các chứng chỉ phụ thuộc CA này.
+CA cha thu hồi chứng chỉ Intermediate bằng CRL/OCSP; phát hành CA trung gian mới bằng khóa mới; cấp lại chứng chỉ lá hợp lệ.
+Khóa riêng Root CA
+Có thể tạo CA trung gian và chứng chỉ giả dưới gốc tin cậy; phạm vi có thể lan tới toàn bộ hệ sinh thái tin cậy.
+Cập nhật kho tin cậy để loại bỏ gốc bị xâm phạm; xây dựng Root CA mới và cấp lại chuỗi chứng chỉ.
+Khóa riêng chứng chỉ máy chủ
+Kẻ tấn công có thể mạo danh dịch vụ tương ứng; không cho phép ký chứng chỉ khác nếu khóa không thuộc CA.
+Thu hồi chứng chỉ máy chủ bị ảnh hưởng; sinh khóa máy chủ mới và cấp lại chứng chỉ.
+5.2 Mô phỏng cấp chứng chỉ giả trong lab
+Tạo Root CA và Intermediate CA dùng riêng trong thư mục lab. Sau khi Intermediate CA được ký, mô phỏng sự cố bằng cách giả định kẻ tấn công lấy được bản sao intermediate.crt và intermediate.key; khóa root.key không được sao chép. Các lệnh dưới đây dùng Bash/WSL/Git Bash và tên miền .test dành riêng cho thử nghiệm, không đưa chứng chỉ vào kho tin cậy thật.
+# Chỉ chạy trong thư mục thử nghiệm dùng một lần; khóa không được bảo vệ để minh họaopenssl req -x509 -newkey rsa:3072 -noenc -keyout root.key -out root.crt -days 365 \  -subj "/CN=Lab Root CA" \  -addext "basicConstraints=critical,CA:TRUE,pathlen:1" \  -addext "keyUsage=critical,keyCertSign,cRLSign"openssl req -new -newkey rsa:3072 -noenc -keyout intermediate.key -out intermediate.csr \  -subj "/CN=Lab Intermediate CA"
+Tạo tệp ca.ext với các phần mở rộng CA và dùng Root CA ký chứng chỉ intermediate. Sau khi ký xong, giả định kẻ tấn công đã lấy được intermediate.key.
+[v3_ca]basicConstraints=critical,CA:TRUE,pathlen:0keyUsage=critical,keyCertSign,cRLSignsubjectKeyIdentifier=hashauthorityKeyIdentifier=keyid,issueropenssl x509 -req -in intermediate.csr -CA root.crt -CAkey root.key -CAcreateserial \  -out intermediate.crt -days 365 -sha256 -extfile ca.ext -extensions v3_ca
+Trong thư mục attacker, dùng khóa Intermediate CA bị lộ để tự cấp chứng chỉ TLS mới cho login.payroll.test — tên miền lab không được CA cho phép. Chứng chỉ leaf có SAN và EKU serverAuth; chỉ khóa ký trung gian bị lộ được dùng, không cần khóa Root CA.
+# Giả lập kẻ tấn công chỉ lấy được chứng chỉ trung gian và khóa riêng bị lộmkdir -p attackercp intermediate.crt attacker/cp intermediate.key attacker/leaked-intermediate.keycd attacker# Tạo khóa và CSR cho tên miền chưa được chủ sở hữu cấp quyềnopenssl req -new -newkey rsa:2048 -noenc -keyout impostor.key -out impostor.csr \  -subj "/CN=login.payroll.test"# Chỉ định rõ chứng chỉ máy chủ lab và SANcat > impostor.ext <<'EOF'[v3_leaf]basicConstraints=critical,CA:FALSEkeyUsage=critical,digitalSignature,keyEnciphermentextendedKeyUsage=serverAuthsubjectAltName=DNS:login.payroll.testEOF# Ký chứng chỉ giả bằng khóa Intermediate CA bị lộopenssl x509 -req -in impostor.csr -CA intermediate.crt \  -CAkey leaked-intermediate.key -CAcreateserial \  -out impostor.crt -days 30 -sha256 -extfile impostor.ext -extensions v3_leaf# Kiểm tra issuer, subject, SAN và xác thực chuỗi + hostname trong labopenssl x509 -in impostor.crt -noout -subject -issuer -serial -ext subjectAltNameopenssl verify -show_chain -CAfile ../root.crt -untrusted intermediate.crt \  -purpose sslserver -verify_hostname login.payroll.test impostor.crt
+Có thể minh họa tiếp một bắt tay TLS hoàn toàn trên loopback. Chạy lệnh máy chủ ở Terminal 1; sau đó chạy client ở Terminal 2. Server chỉ lắng nghe trên 127.0.0.1, không mở ra mạng ngoài.
+# Terminal 1: máy chủ dùng chứng chỉ vừa ký giả, chỉ bind loopbackopenssl s_server -accept 127.0.0.1:8443 -cert impostor.crt -key impostor.key \  -cert_chain intermediate.crt -www# Terminal 2: xác minh bằng Root CA thử nghiệm và đúng hostname trong SANopenssl s_client -connect 127.0.0.1:8443 -servername login.payroll.test \  -verify 5 -verify_return_error -verify_hostname login.payroll.test \  -CAfile ../root.crt
+Kết quả dự kiến là Verify return code: 0 (ok). Dừng máy chủ bằng Ctrl+C. Đây là mô phỏng trong lab: không cấu hình DNS công khai, không cài Root CA thử nghiệm vào hệ điều hành/trình duyệt và không dùng tên miền hoặc khóa của tổ chức thật. [27]
+Kết quả mong đợi: subject/SAN là login.payroll.test, issuer là Intermediate CA của lab; lệnh verify trả về impostor.crt: OK. Điều này chứng minh khóa Intermediate CA bị lộ có thể ký chứng chỉ cho tên miền trái phép mà Root CA vẫn xác thực được chuỗi. Kết quả chỉ đúng khi client tin Root CA thử nghiệm và chưa áp dụng trạng thái thu hồi; lệnh verify ở trên không tự tải CRL/OCSP. [24][25]
+5.3 Quy trình ứng phó và thu hồi
+1. Cô lập CA hoặc HSM bị ảnh hưởng, dừng phát hành chứng chỉ, khóa quyền truy cập khóa cũ và bảo toàn log, bản sao cấu hình, mốc thời gian cùng bằng chứng phục vụ điều tra.
+2. Xác định cấp CA bị lộ, thời điểm sớm nhất có thể bị xâm phạm, các chứng chỉ đã phát hành, serial number, hệ thống phụ thuộc và khả năng kẻ tấn công tạo CRL hoặc trạng thái OCSP giả. Với CA công khai, rà soát log Certificate Transparency và thông báo cho các bên tin cậy liên quan.
+3. Nếu Intermediate CA bị lộ nhưng Root CA còn an toàn, dùng CA cha sạch để thu hồi chứng chỉ của Intermediate CA với lý do cACompromise; công bố CRL mới và cập nhật OCSP. Không dựa vào CRL do khóa bị lộ ký. Theo phạm vi chính sách, đánh dấu chứng chỉ lá do CA đó phát hành là không còn tin cậy và cấp lại qua CA mới. RFC 5280 quy định hậu quả và việc thu hồi chứng chỉ liên quan đến CA bị chiếm; RFC 6960 cho phép OCSP trả trạng thái revoked khi biết khóa CA đã bị lộ. [22][23]
+4. Nếu chính Root CA bị lộ, không có CA cấp trên để thu hồi tin cậy. Phân phối cập nhật để gỡ hoặc đánh dấu Root CA cũ không tin cậy trong mọi kho tin cậy được quản lý; tạo Root CA mới với khóa mới, dựng lại chuỗi và cấp lại chứng chỉ phụ thuộc.
+5. Tạo khóa CA mới trong môi trường sạch, ưu tiên HSM; thay khóa và chứng chỉ trên các dịch vụ; xoay vòng thông tin xác thực có liên quan; kiểm tra từng client, proxy, thiết bị và hệ thống nhúng đã nhận chuỗi mới.
+6. Phát hành bản tin sự cố, cập nhật CRL/OCSP và kho tin cậy qua các kênh quản trị tin cậy; làm mới cache, giám sát bắt tay thất bại và chứng chỉ bất thường; chỉ mở lại phát hành sau khi kiểm tra độc lập quy trình bảo vệ khóa và quyền ký.
+Kết quả mong đợi trong demo: CA cha có thể thu hồi chứng chỉ Intermediate CA vì khóa Root CA vẫn an toàn; các máy khách thực thi kiểm tra thu hồi sẽ từ chối chuỗi có intermediate bị thu hồi. Thời điểm từ chối phụ thuộc cách client kiểm tra CRL/OCSP, thời hạn cache và chính sách fail-open/fail-closed, nên cần thu hồi cùng cập nhật kho tin cậy và thông báo sự cố thay vì chỉ công bố một CRL. [22][23][24]
+TÀI LIỆU THAM KHẢO BỔ SUNG
+[22] D. Cooper và cộng sự, “Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile,” RFC 5280, 2008. https://www.rfc-editor.org/rfc/rfc5280.html
+[23] S. Santesson và cộng sự, “X.509 Internet Public Key Infrastructure Online Certificate Status Protocol - OCSP,” RFC 6960, 2013. https://www.rfc-editor.org/rfc/rfc6960.html
+[24] OpenSSL Project, “openssl-verify,” tài liệu OpenSSL 3.6. https://docs.openssl.org/3.6/man1/openssl-verify/
+[25] OpenSSL Project, “openssl-req” và “openssl-x509,” tài liệu OpenSSL 3.6. https://docs.openssl.org/3.6/man1/openssl-req/ và https://docs.openssl.org/3.6/man1/openssl-x509/
+[26] E. Rescorla, “The Transport Layer Security (TLS) Protocol Version 1.3,” RFC 8446, 2018. https://www.rfc-editor.org/rfc/rfc8446.html
+[27] OpenSSL Project, “openssl-s_server” và “openssl-s_client,” tài liệu OpenSSL 3.6. https://docs.openssl.org/3.6/man1/openssl-s_server/; https://docs.openssl.org/3.6/man1/openssl-s_client/

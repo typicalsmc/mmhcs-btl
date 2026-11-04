@@ -1,0 +1,30 @@
+{
+  "design": "DAHXli5S08g",
+  "transaction": "2646385805473822229",
+  "preview": "https://www.canva.com/d/X90dRLAOjGjFUij",
+  "chapter1design": "DAHZ3eFCorE",
+  "chapter1transaction": "7296352419311866201",
+  "chapter1preview": "https://www.canva.com/d/dBAsRjYEzAcVLs7",
+  "pending": null,
+  "status": "applied",
+  "page_count": 38,
+  "applied_merge": {
+    "design_id": "DAHXli5S08g",
+    "type": "modify_existing_design",
+    "operations": [
+      {
+        "type": "insert_pages",
+        "after_page_number": 2,
+        "source": {
+          "type": "design",
+          "design_id": "DAHZ3eFCorE",
+          "page_numbers": [
+            1,
+            2,
+            3
+          ]
+        }
+      }
+    ]
+  }
+}
