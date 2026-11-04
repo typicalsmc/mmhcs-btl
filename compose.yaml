@@ -1,0 +1,91 @@
+services:
+  ca:
+    image: pki-lab-tools:local
+    build:
+      context: .
+      dockerfile: docker/tools.Dockerfile
+    network_mode: none
+    command: [python, /lab/pki.py, init]
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/ca-private
+        target: /ca-private
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${LAB_RUN_DIR}/legitimate
+        target: /legitimate
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${LAB_RUN_DIR}/leak
+        target: /leak
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${LAB_RUN_DIR}/public
+        target: /public
+        bind: {create_host_path: false}
+  legitimate:
+    image: nginx:1.28-alpine
+    networks: [lab]
+    environment:
+      LAB_ORIGIN: legitimate
+      LAB_BODY: LEGITIMATE PAYROLL LAB
+      NGINX_ENVSUBST_FILTER: '^(LAB_ORIGIN|LAB_BODY)$$'
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/legitimate
+        target: /certs
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./docker/nginx.conf
+        target: /etc/nginx/templates/default.conf.template
+        read_only: true
+        bind: {create_host_path: false}
+  attacker:
+    image: pki-lab-attacker:local
+    build:
+      context: .
+      dockerfile: docker/attacker.Dockerfile
+    networks: [lab]
+    environment:
+      LAB_ORIGIN: attacker
+      LAB_BODY: ATTACKER PAYROLL LAB
+      NGINX_ENVSUBST_FILTER: '^(LAB_ORIGIN|LAB_BODY)$$'
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/leak
+        target: /leak
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${LAB_RUN_DIR}/attacker
+        target: /certs
+        bind: {create_host_path: false}
+  dns:
+    image: pki-lab-tools:local
+    networks: [lab]
+    command: [dnsmasq, --conf-file=/lab/dnsmasq.conf]
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/dns
+        target: /dns
+        read_only: true
+        bind: {create_host_path: false}
+  victim:
+    image: pki-lab-tools:local
+    networks: [lab]
+    command: [python, /lab/client.py]
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/public
+        target: /trust
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${LAB_RUN_DIR}/dns/resolv.conf
+        target: /etc/resolv.conf
+        read_only: true
+        bind: {create_host_path: false}
+networks:
+  lab:
+    internal: true

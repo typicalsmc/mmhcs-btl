@@ -1,0 +1,9 @@
+*
+!requirements.txt
+!lab/
+!lab/*.py
+!scripts/
+!scripts/*.sh
+!docker/
+!docker/*.Dockerfile
+!docker/*.conf
