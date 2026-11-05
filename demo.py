@@ -1,10 +1,9 @@
-"""Host-loopback presentation/controller for the isolated Docker PKI lab."""
+"""Step-by-step terminal presentation for the isolated Docker PKI lab."""
 from __future__ import annotations
 
 import argparse
 import datetime as dt
 import hashlib
-import http.server
 import json
 import pathlib
 import re
@@ -12,13 +11,11 @@ import signal
 import ssl
 import subprocess
 import sys
-import threading
 import time
 import uuid
 
 BASE = pathlib.Path(__file__).resolve().parent
 HOST = 'login.payroll.test'
-RUN_LOCK = threading.Lock()
 
 
 def atomic_text(path, text):
@@ -160,7 +157,7 @@ def root_fingerprint(deployment):
     return hashlib.sha256(ssl.PEM_cert_to_DER_cert(certificate)).hexdigest()
 
 
-def run_lab():
+def run_lab(*, before_step=None, on_observation=None):
     deployment = Deployment.create()
     failure = None
     try:
@@ -169,7 +166,11 @@ def run_lab():
         results = []
 
         def observe(ident, title, expected, explain, service='attacker', trust='root',
-                    hostname=HOST, check=False, code=None):
+                    hostname=HOST, check=False, code=None, prepare=None):
+            if before_step is not None:
+                before_step(len(results) + 1, ident, title, explain)
+            if prepare is not None:
+                prepare()
             row = deployment.probe(hostname, trust, check, f'{deployment.run_id}-{ident}')
             passed = (row['accepted'] == expected
                       and row['resolved_ip'] == deployment.addresses[service]
@@ -183,29 +184,30 @@ def run_lab():
             row.update(id=ident, title=title, expected=expected, passed=bool(passed),
                        explain=explain, crl_enabled=check, trust=trust)
             results.append(row)
+            if on_observation is not None:
+                on_observation(row)
             return row
 
         baseline = observe('baseline', 'Kết nối hợp lệ ban đầu', True,
                            'DNS trỏ đến Nginx hợp lệ; kiểm tra toàn chuỗi và CRL.',
                            service='legitimate', trust='bundle', check=True)
-        deployment.attack()
         observe('untrusted', 'Root CA chưa được tin cậy', False,
-                'Client chỉ tin CA không liên quan nên từ chối chuỗi của attacker.', trust='unrelated')
+                'Client chỉ tin CA không liên quan nên từ chối chuỗi của attacker.',
+                trust='unrelated', prepare=deployment.attack)
         forged = observe('forged', 'Chứng chỉ giả vượt xác minh', True,
                          'Resolver bị kiểm soát đổi DNS; hostname/SNI giữ nguyên, khóa CA bị lộ ký leaf được tin cậy.')
         observe('hostname', 'Tên miền sai bị từ chối', False,
                 'DNS vẫn dẫn đến attacker nhưng SAN không khớp other.payroll.test.',
                 hostname='other.payroll.test', code=62)
-        atomic_text(deployment.folder / 'revocation.txt', deployment.revoke())
         observe('revoked', 'Thu hồi CA và bật CRL', False,
                 'Bash thu hồi serial của CA trung gian với lý do CACompromise.',
-                trust='bundle', check=True, code=23)
+                trust='bundle', check=True, code=23,
+                prepare=lambda: atomic_text(deployment.folder / 'revocation.txt', deployment.revoke()))
         unchecked = observe('unchecked', 'Có CRL nhưng không kiểm tra', True,
                             'Cùng bundle và chứng chỉ attacker; client không thực thi CRL.', trust='bundle')
-        deployment.recover()
         recovery = observe('recovery', 'Thay CA và cấp lại', True,
                            'CA trung gian mới; root cũ giữ nguyên và CA bị lộ vẫn bị thu hồi.',
-                           service='legitimate', trust='bundle', check=True)
+                           service='legitimate', trust='bundle', check=True, prepare=deployment.recover)
         invariants = {
             'distinct_attacker_leaf': baseline['fingerprint'] != forged['fingerprint'],
             'attacker_identity_unchanged': forged['fingerprint'] == unchecked['fingerprint'],
@@ -224,6 +226,10 @@ def run_lab():
         atomic_text(deployment.folder / 'results.json', serialized)
         atomic_text(BASE / 'latest-results.json', serialized)
         return output
+    except KeyboardInterrupt as exc:
+        failure = exc
+        atomic_text(deployment.folder / 'failure.txt', 'Interrupted')
+        raise KeyboardInterrupt(f'Run {deployment.run_id} interrupted; evidence: {deployment.folder}') from exc
     except Exception as exc:
         failure = exc
         atomic_text(deployment.folder / 'failure.txt', str(exc))
@@ -244,43 +250,62 @@ def run_lab():
                 raise RuntimeError('\n'.join(cleanup_errors))
 
 
-class Handler(http.server.BaseHTTPRequestHandler):
-    def respond(self, status, payload):
-        data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
-        self.send_header('Content-Length', str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
+def prompt_step(index, ident, title, explain):
+    print(f'\n[{index}/7] {ident} - {title}', flush=True)
+    print(explain, flush=True)
+    try:
+        input('Nhấn Enter để tiếp tục (Ctrl+C để dừng): ')
+    except EOFError as exc:
+        raise KeyboardInterrupt('Input closed') from exc
 
-    def do_GET(self):
-        if self.path not in ('/', '/index.html'):
-            self.send_error(404)
-            return
-        data = (BASE / 'demo.html').read_bytes()
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.send_header('Content-Length', str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
 
-    def do_POST(self):
-        if self.path != '/api/run':
-            self.send_error(404)
-            return
-        if self.headers.get('Origin') not in (None, f'http://127.0.0.1:{self.server.server_port}',
-                                               f'http://localhost:{self.server.server_port}'):
-            self.send_error(403)
-            return
-        if not RUN_LOCK.acquire(blocking=False):
-            self.respond(409, {'error': 'A demo run is already in progress'})
-            return
-        try:
-            self.respond(200, run_lab())
-        except Exception as exc:
-            self.respond(500, {'error': str(exc)})
-        finally:
-            RUN_LOCK.release()
+def print_observation(row):
+    def observed(field):
+        value = row.get(field)
+        return 'không quan sát' if value is None else value
+
+    status = 'PASS' if row['passed'] else 'FAIL'
+    tls = 'chấp nhận' if row['accepted'] else 'từ chối'
+    http_host = row['hostname'] if row.get('http_status') is not None else 'không quan sát'
+    body = row.get('http_body')
+    body = 'không quan sát' if body is None else json.dumps(body, ensure_ascii=False)
+    lines = [
+        f'Kịch bản: {status}',
+        f'TLS: {tls}',
+        f'  Hostname: {row["hostname"]}',
+        f'  SNI: {row["hostname"]}',
+        f'  HTTP Host: {http_host}',
+        f'  Trust: {row["trust"]}',
+        f'  CRL: {"bật" if row["crl_enabled"] else "tắt"}',
+        f'  Resolved IP: {observed("resolved_ip")}',
+        f'  TCP peer IP: {observed("peer_ip")}',
+    ]
+    if row['accepted']:
+        lines.extend((f'  Protocol: {observed("protocol")}', f'  Cipher: {observed("cipher")}'))
+    else:
+        lines.extend((f'  Verification code: {observed("verify_code")}',
+                      f'  Verification detail: {observed("detail")}'))
+    lines.extend((
+        f'  SHA-256 fingerprint: {observed("fingerprint")}',
+        f'  Issuer: {observed("issuer")}',
+        f'  Serial: {observed("serial")}',
+        f'  HTTP status: {observed("http_status")}',
+        f'  Origin: {observed("http_origin")}',
+        f'  Body: {body}',
+    ))
+    print('\n'.join(lines), flush=True)
+
+
+def print_summary(output):
+    passed = sum(row['passed'] for row in output['results'])
+    print(f'\nKết quả: {passed}/7 kịch bản PASS', flush=True)
+    for name, valid in output['invariants'].items():
+        print(f'  {name}: {"PASS" if valid else "FAIL"}', flush=True)
+    print(f'Tổng thể: {"PASS" if output["all_passed"] else "FAIL"}', flush=True)
+    print(f'Run ID: {output["run_id"]}', flush=True)
+    print(f'Bằng chứng: {output["folder"]}', flush=True)
+    print(f'Results JSON: {pathlib.Path(output["folder"]) / "results.json"}', flush=True)
+    print(f'Victim OpenSSL: {output["openssl"]}', flush=True)
 
 
 def interrupt(_signum, _frame):
@@ -310,19 +335,18 @@ def run_interruptibly(deployment, action):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--self-test', action='store_true')
-    mode.add_argument('--action', choices=('setup', 'attack', 'revoke', 'probe', 'recover', 'down'))
-    parser.add_argument('--port', type=int, default=8765)
-    parser.add_argument('--run-id')
-    parser.add_argument('--check-crl', action='store_true')
+    mode.add_argument('--self-test', action='store_true',
+                      help='run all seven steps unattended and print JSON')
+    mode.add_argument('--action', choices=('setup', 'attack', 'revoke', 'probe', 'recover', 'down'),
+                      help='perform an individual deployment action and print JSON')
+    parser.add_argument('--run-id', help='existing deployment ID for individual actions')
+    parser.add_argument('--check-crl', action='store_true', help='enable CRL checks for the probe action')
     args = parser.parse_args()
     if args.action and args.action != 'setup' and not args.run_id:
         parser.error('--run-id is required for non-setup actions')
+    if not args.self_test and not args.action and not sys.stdin.isatty():
+        parser.error('Interactive mode requires a terminal; use --self-test for unattended JSON execution.')
     try:
-        if args.self_test:
-            output = run_lab()
-            print(json.dumps(output, ensure_ascii=False, indent=2))
-            return 0 if output['all_passed'] else 1
         if args.action:
             deployment = Deployment.create() if args.action == 'setup' else Deployment(args.run_id)
             if args.action == 'setup':
@@ -337,12 +361,27 @@ def main():
                 output = run_interruptibly(deployment, args.action)
             print(json.dumps(output, ensure_ascii=False, indent=2))
             return 0
-        print(f'PKI lab: http://127.0.0.1:{args.port}', flush=True)
-        http.server.ThreadingHTTPServer(('127.0.0.1', args.port), Handler).serve_forever()
+        if not args.self_test:
+            print(f'Lab Docker cô lập cho {HOST}: 7 bước, nhấn Enter trước mỗi quan sát.\n'
+                  'Đang setup/build và chờ các dịch vụ sẵn sàng; vui lòng đợi.\n'
+                  'DNS và kho tin cậy của host không thay đổi.', flush=True)
+        previous = signal.signal(signal.SIGTERM, interrupt)
+        try:
+            output = run_lab() if args.self_test else run_lab(
+                before_step=prompt_step, on_observation=print_observation)
+        finally:
+            signal.signal(signal.SIGTERM, previous)
+        if args.self_test:
+            print(json.dumps(output, ensure_ascii=False, indent=2))
+        else:
+            print_summary(output)
+        return 0 if output['all_passed'] else 1
+    except KeyboardInterrupt as exc:
+        print(str(exc) or 'Interrupted', file=sys.stderr, flush=True)
+        return 130
     except (RuntimeError, ValueError, OSError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    return 0
 
 
 if __name__ == '__main__':

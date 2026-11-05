@@ -10,21 +10,25 @@ Yêu cầu: Docker Engine/Desktop có Compose, Python 3.10+ trên host. Không c
 bash start-demo.sh                     # hoặc: python3 demo.py
 ```
 
-Mở http://127.0.0.1:8765, bấm **Chạy demo thực tế**, dùng **Bước tiếp theo** hoặc chọn từng bước. Windows: `run-demo.cmd` (gọi `start-demo.ps1`). Kiểm thử đầu-cuối không mở giao diện: `python3 demo.py --self-test` (mã thoát 0 chỉ khi cả 7 quan sát và bất biến đạt).
+Mặc định là trình diễn terminal gồm 7 bước: chờ setup/build và dịch vụ sẵn sàng, sau đó nhấn Enter trước mỗi quan sát. Mỗi bước in PASS/FAIL của kịch bản riêng với kết quả TLS chấp nhận/từ chối và bằng chứng DNS/TCP/TLS/HTTP; từ chối TLS đúng kỳ vọng vẫn là PASS. Cuối phiên có tổng kết 7 kịch bản, 5 bất biến chứng chỉ và đường dẫn bằng chứng. Không mở trình duyệt hay HTTP server trên host.
 
-## Terminal (từng bước, giữ deployment để trình diễn)
+Windows: `run-demo.cmd` (gọi `start-demo.ps1`). Các launcher chuyển tiếp tham số và mã thoát; `run-demo.cmd` chỉ pause khi chạy không có tham số. Chế độ mặc định cần terminal tương tác; stdin chuyển hướng bị từ chối trước khi tạo deployment.
+
+Tự động hóa không có prompt: `python3 demo.py --self-test`, stdout là JSON (mã thoát 0 chỉ khi cả 7 quan sát và bất biến đạt, 1 khi thất bại). Ctrl+C, EOF tại prompt hoặc SIGTERM dừng phiên đầy đủ với mã 130, giữ bằng chứng và dọn project Docker; `failure.txt` ghi `Interrupted`. DNS và kho tin cậy của host không thay đổi.
+
+## Các lệnh độc lập (giữ deployment để trình diễn)
 
 ```bash
 python3 demo.py --action setup
 python3 demo.py --action attack   --run-id ID
 python3 demo.py --action probe    --run-id ID
-docker compose --env-file runs/ID/compose.env -p pki-lab-ID run --rm --no-deps ca bash /lab/revoke-cert.sh
+python3 demo.py --action revoke   --run-id ID
 python3 demo.py --action probe    --run-id ID --check-crl
 python3 demo.py --action recover  --run-id ID
 python3 demo.py --action down     --run-id ID
 ```
 
-Thay mọi `ID` bằng `run_id` do `setup` in ra. Lệnh thu hồi độc lập không cần giao diện web.
+Thay mọi `ID` bằng `run_id` do `setup` in ra. Mỗi action in JSON; deployment được giữ đến khi gọi `down`. Action `revoke` chạy Bash trong container CA.
 
 ## Bảy quan sát
 
