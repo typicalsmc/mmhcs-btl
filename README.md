@@ -14,6 +14,10 @@ Mặc định là trình diễn terminal gồm 7 bước: chờ setup/build và 
 
 Windows: `run-demo.cmd` (gọi `start-demo.ps1`). Các launcher chuyển tiếp tham số và mã thoát; `run-demo.cmd` chỉ pause khi chạy không có tham số. Chế độ mặc định cần terminal tương tác; stdin chuyển hướng bị từ chối trước khi tạo deployment.
 
+Output Docker được giải mã UTF-8 tường minh, không dùng code page mặc định của Windows (tránh lỗi `UnicodeDecodeError` với `cp1252`). Mỗi lần chờ readiness có tối đa 120 giây, gồm cả thời gian tạo container probe trên Docker Desktop; hết hạn vẫn báo lỗi kèm log và không bỏ qua xác minh TLS/HTTP.
+
+Kiểm tra hồi quy giải mã stdout/stderr: `python -m unittest discover -s tests -v`.
+
 Tự động hóa không có prompt: `python3 demo.py --self-test`, stdout là JSON (mã thoát 0 chỉ khi cả 7 quan sát và bất biến đạt, 1 khi thất bại). Ctrl+C, EOF tại prompt hoặc SIGTERM dừng phiên đầy đủ với mã 130, giữ bằng chứng và dọn project Docker; `failure.txt` ghi `Interrupted`. DNS và kho tin cậy của host không thay đổi.
 
 ## Các lệnh độc lập (giữ deployment để trình diễn)

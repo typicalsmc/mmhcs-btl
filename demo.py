@@ -27,7 +27,8 @@ def atomic_text(path, text):
 
 def execute(command, timeout=60):
     try:
-        result = subprocess.run(command, cwd=BASE, text=True, capture_output=True, timeout=timeout)
+        result = subprocess.run(command, cwd=BASE, text=True, encoding='utf-8',
+                                capture_output=True, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise RuntimeError(f'{command!r}: {exc}') from exc
     if result.returncode:
@@ -104,7 +105,7 @@ class Deployment:
                                        '--ocsp', certificate, '--ocsp-connect', address))
 
     def ready(self, service, trust='bundle', check_crl=False):
-        deadline = time.monotonic() + 30
+        deadline = time.monotonic() + 120
         failure = ''
         while time.monotonic() < deadline:
             try:
