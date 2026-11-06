@@ -18,6 +18,7 @@ keyUsage=critical,digitalSignature,keyEncipherment
 extendedKeyUsage=serverAuth
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer
+crlDistributionPoints=URI:http://crl.payroll.test/intermediate.crl
 EXT
     serial="$(openssl rand -hex 16)"
     [[ "$serial" != 00000000000000000000000000000000 ]] || { echo 'Zero serial' >&2; exit 1; }

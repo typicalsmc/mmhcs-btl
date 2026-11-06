@@ -11,9 +11,14 @@ import tempfile
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+from cryptography.x509.oid import AuthorityInformationAccessOID, ExtendedKeyUsageOID, NameOID
 
 HOST = "login.payroll.test"
+# Browsers fetch DER CRLs over plain HTTP; the optional browser gateway serves /public here.
+CRL_BASE = "http://crl.payroll.test"
+# No trailing slash: Chrome appends "/<base64 request>" itself.
+OCSP_URL = "http://ocsp.payroll.test"
+OCSP = Path("/ocsp")
 CA_PRIVATE = Path("/ca-private")
 PUBLIC = Path("/public")
 LEGITIMATE = Path("/legitimate")
@@ -28,7 +33,8 @@ def name(cn):
     return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
 
 
-def cert(cn, subject_key, issuer_cert=None, issuer_key=None, ca=False, path=None):
+def cert(cn, subject_key, issuer_cert=None, issuer_key=None, ca=False, path=None, crl_url=None, ocsp_url=None,
+         responder=False):
     now = dt.datetime.now(dt.timezone.utc)
     subject = name(cn)
     builder = (
@@ -44,7 +50,7 @@ def cert(cn, subject_key, issuer_cert=None, issuer_key=None, ca=False, path=None
             x509.KeyUsage(
                 digital_signature=True,
                 content_commitment=False,
-                key_encipherment=not ca,
+                key_encipherment=not ca and not responder,
                 data_encipherment=False,
                 key_agreement=False,
                 key_cert_sign=ca,
@@ -60,7 +66,16 @@ def cert(cn, subject_key, issuer_cert=None, issuer_key=None, ca=False, path=None
     builder = builder.add_extension(
         x509.AuthorityKeyIdentifier.from_issuer_public_key(signing_key.public_key()), False
     )
-    if not ca:
+    if crl_url:
+        point = x509.DistributionPoint([x509.UniformResourceIdentifier(crl_url)], None, None, None)
+        builder = builder.add_extension(x509.CRLDistributionPoints([point]), False)
+    if ocsp_url:
+        access = x509.AccessDescription(AuthorityInformationAccessOID.OCSP, x509.UniformResourceIdentifier(ocsp_url))
+        builder = builder.add_extension(x509.AuthorityInformationAccess([access]), False)
+    if responder:
+        builder = builder.add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.OCSP_SIGNING]), False)
+        builder = builder.add_extension(x509.OCSPNoCheck(), False)
+    elif not ca:
         builder = builder.add_extension(x509.SubjectAlternativeName([x509.DNSName(HOST)]), False)
         builder = builder.add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), False)
     return builder.sign(signing_key, hashes.SHA256())
@@ -137,40 +152,49 @@ def load_key(path):
 
 
 def publish_trust():
+    """Publish public revocation data: DER CRLs, the client trust bundle, and the OCSP responder index."""
     required = (
         PUBLIC / "root.crt",
         PUBLIC / "root.crl.pem",
         PUBLIC / "intermediate.crt",
         PUBLIC / "intermediate.crl.pem",
+        CA_PRIVATE / "index.txt",
     )
     require_files(*required)
-    paths = [PUBLIC / "root.crt", PUBLIC / "root.crl.pem", PUBLIC / "intermediate.crl.pem"]
+    paths = [PUBLIC / "root.crl.pem", PUBLIC / "intermediate.crl.pem"]
     replacement_cert = PUBLIC / "replacement-intermediate.crt"
     replacement_crl = PUBLIC / "replacement-intermediate.crl.pem"
     if replacement_cert.exists() or replacement_crl.exists():
         require_files(replacement_cert, replacement_crl)
         paths.append(replacement_crl)
-    write_atomic(PUBLIC / "trust.pem", b"".join(path.read_bytes() for path in paths))
+    for path in paths:
+        der = x509.load_pem_x509_crl(path.read_bytes()).public_bytes(serialization.Encoding.DER)
+        write_atomic(path.with_name(path.name.removesuffix(".pem")), der)
+    write_atomic(PUBLIC / "trust.pem", b"".join(path.read_bytes() for path in [PUBLIC / "root.crt", *paths]))
+    write_atomic(OCSP / "index.txt", (CA_PRIVATE / "index.txt").read_bytes())
 
 
 def init():
-    for directory in (CA_PRIVATE, PUBLIC, LEGITIMATE, LEAK):
+    for directory in (CA_PRIVATE, PUBLIC, LEGITIMATE, LEAK, OCSP):
         if not directory.is_dir():
             raise RuntimeError(f"Required bind-mounted directory is missing: {directory}")
     if any(CA_PRIVATE.iterdir()):
         raise RuntimeError("CA directory is not empty; refusing to initialize or mix an existing run")
-    if any(any(directory.iterdir()) for directory in (PUBLIC, LEGITIMATE, LEAK)):
-        raise RuntimeError("Public, legitimate, and leak directories must be empty for initialization")
+    if any(any(directory.iterdir()) for directory in (PUBLIC, LEGITIMATE, LEAK, OCSP)):
+        raise RuntimeError("Public, legitimate, leak, and OCSP directories must be empty for initialization")
     CA_PRIVATE.chmod(0o700)
 
     root_key = key()
     root = cert("Lab Root CA", root_key, ca=True, path=1)
     intermediate_key = key()
-    intermediate = cert("Lab Intermediate CA", intermediate_key, root, root_key, True, 0)
+    intermediate = cert("Lab Intermediate CA", intermediate_key, root, root_key, True, 0,
+                        f"{CRL_BASE}/root.crl", ocsp_url=OCSP_URL)
     leaf_key = key()
-    leaf = cert(HOST, leaf_key, intermediate, intermediate_key)
+    leaf = cert(HOST, leaf_key, intermediate, intermediate_key, crl_url=f"{CRL_BASE}/intermediate.crl")
     unrelated_key = key()
     unrelated_root = cert("Untrusted Root CA", unrelated_key, ca=True, path=1)
+    responder_key = key()
+    responder = cert("Lab OCSP Responder", responder_key, root, root_key, responder=True)
 
     save_key(CA_PRIVATE / "root.key", root_key)
     save_key(CA_PRIVATE / "intermediate.key", intermediate_key)
@@ -180,6 +204,10 @@ def init():
     write_atomic(LEGITIMATE / "chain.pem", pem(leaf) + pem(intermediate))
     write_atomic(LEAK / "intermediate.crt", pem(intermediate))
     save_key(LEAK / "leaked-intermediate.key", intermediate_key)
+    # The responder signs with its own delegated key; it never receives root.key.
+    save_key(OCSP / "responder.key", responder_key)
+    write_atomic(OCSP / "responder.crt", pem(responder))
+    write_atomic(OCSP / "root.crt", pem(root))
     for filename, certificate in (
         ("root.crt", root),
         ("intermediate.crt", intermediate),
@@ -221,13 +249,21 @@ def recover():
         raise RuntimeError("Revoke the compromised intermediate before recovery")
     root_key = load_key(CA_PRIVATE / "root.key")
     replacement_key = key()
-    replacement = cert("Replacement Intermediate CA", replacement_key, root, root_key, True, 0)
+    replacement = cert("Replacement Intermediate CA", replacement_key, root, root_key, True, 0,
+                       f"{CRL_BASE}/root.crl", ocsp_url=OCSP_URL)
     leaf_key = key()
-    leaf = cert(HOST, leaf_key, replacement, replacement_key)
+    leaf = cert(HOST, leaf_key, replacement, replacement_key,
+                crl_url=f"{CRL_BASE}/replacement-intermediate.crl")
 
     save_key(CA_PRIVATE / "replacement-intermediate.key", replacement_key)
     write_atomic(CA_PRIVATE / "replacement-intermediate.crt", pem(replacement))
     write_atomic(PUBLIC / "replacement-intermediate.crt", pem(replacement))
+    # Register the replacement in the root database so the OCSP responder reports it as good.
+    subprocess.run(
+        ["openssl", "ca", "-config", str(CA_PRIVATE / "root.cnf"), "-valid", str(PUBLIC / "replacement-intermediate.crt")],
+        check=True,
+        timeout=30,
+    )
     write_atomic(PUBLIC / "replacement-intermediate.crl.pem", pem(crl(replacement, replacement_key)))
     save_key(LEGITIMATE / "server.key", leaf_key)
     write_atomic(LEGITIMATE / "chain.pem", pem(leaf) + pem(replacement))

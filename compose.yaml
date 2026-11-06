@@ -23,6 +23,10 @@ services:
         source: ${LAB_RUN_DIR}/public
         target: /public
         bind: {create_host_path: false}
+      - type: bind
+        source: ${LAB_RUN_DIR}/ocsp
+        target: /ocsp
+        bind: {create_host_path: false}
   legitimate:
     image: nginx:1.28-alpine
     networks: [lab]
@@ -71,6 +75,19 @@ services:
         target: /dns
         read_only: true
         bind: {create_host_path: false}
+  ocsp:
+    image: pki-lab-tools:local
+    networks: [lab]
+    # openssl ocsp as PID 1 would ignore SIGTERM; tini lets stop/restart take effect at once.
+    init: true
+    command: [openssl, ocsp, -port, '80', -index, /ocsp/index.txt, -CA, /ocsp/root.crt,
+              -rsigner, /ocsp/responder.crt, -rkey, /ocsp/responder.key, -nmin, '5', -timeout, '5', -ignore_err]
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/ocsp
+        target: /ocsp
+        read_only: true
+        bind: {create_host_path: false}
   victim:
     image: pki-lab-tools:local
     networks: [lab]
@@ -86,6 +103,26 @@ services:
         target: /etc/resolv.conf
         read_only: true
         bind: {create_host_path: false}
+  browser:
+    # Opt-in only (profile "browser"); the only service with published ports.
+    image: nginx:1.28-alpine
+    profiles: [browser]
+    networks: [lab, edge]
+    ports:
+      - ${LAB_BROWSER_IP:-127.0.0.1}:443:443
+      - ${LAB_BROWSER_IP:-127.0.0.1}:80:80
+    volumes:
+      - type: bind
+        source: ${LAB_RUN_DIR}/public
+        target: /public
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./docker/browser-gateway.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind: {create_host_path: false}
 networks:
   lab:
     internal: true
+  edge: {}

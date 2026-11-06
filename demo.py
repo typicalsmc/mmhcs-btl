@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import ipaddress
 import json
 import pathlib
 import re
@@ -49,7 +50,7 @@ class Deployment:
         run_id = uuid.uuid4().hex[:12]
         folder = BASE / 'runs' / run_id
         folder.mkdir(parents=True, mode=0o700)
-        for directory in ('ca-private', 'legitimate', 'leak', 'attacker', 'public', 'dns'):
+        for directory in ('ca-private', 'legitimate', 'leak', 'attacker', 'public', 'dns', 'ocsp'):
             (folder / directory).mkdir(mode=0o700)
         for filename in ('hosts', 'resolv.conf'):
             (folder / 'dns' / filename).touch(mode=0o600)
@@ -96,6 +97,12 @@ class Deployment:
             command.append('--check-crl')
         return json.loads(self.compose(*command, timeout=timeout))
 
+    def ocsp(self, certificate='intermediate'):
+        # Re-inspected on every call so a restarted responder is still reachable.
+        address = self.inspect_address('ocsp')
+        return json.loads(self.compose('run', '--rm', '--no-deps', 'victim', 'python', '/lab/client.py',
+                                       '--ocsp', certificate, '--ocsp-connect', address))
+
     def ready(self, service, trust='bundle', check_crl=False):
         deadline = time.monotonic() + 30
         failure = ''
@@ -119,6 +126,7 @@ class Deployment:
         self.compose('config')
         self.compose('build', 'ca', 'attacker', timeout=600)
         self.compose('run', '--rm', '--no-deps', 'ca', 'python', '/lab/pki.py', 'init')
+        self.compose('up', '-d', '--no-deps', 'ocsp')
         self.compose('up', '-d', '--no-deps', 'legitimate')
         address = self.inspect_address('legitimate')
         atomic_text(self.folder / 'dns' / 'hosts', f'{address} {HOST}\n{address} other.payroll.test\n')
@@ -126,6 +134,9 @@ class Deployment:
         dns = self.inspect_address('dns')
         atomic_text(self.folder / 'dns' / 'resolv.conf', f'nameserver {dns}\noptions timeout:2 attempts:1 ndots:1\n')
         self.ready('legitimate', check_crl=True)
+        status = self.ocsp()
+        if status['cert_status'] != 'GOOD':
+            raise RuntimeError(f'OCSP responder did not report the intermediate as GOOD: {json.dumps(status)}\n{self.logs()}')
 
     def attack(self):
         self.compose('up', '-d', '--no-deps', 'attacker')
@@ -134,22 +145,44 @@ class Deployment:
         self.ready('attacker', trust='root')
         return self.addresses
 
+    def reload_ocsp(self):
+        # openssl ocsp checks the index for changes before blocking in accept, so its next answer
+        # would still come from the old index; restart it to serve the new revocation state now.
+        self.compose('restart', 'ocsp')
+
     def revoke(self):
-        return self.compose('run', '--rm', '--no-deps', 'ca', 'bash', '/lab/revoke-cert.sh')
+        output = self.compose('run', '--rm', '--no-deps', 'ca', 'bash', '/lab/revoke-cert.sh')
+        self.reload_ocsp()
+        return output
 
     def recover(self):
         output = self.compose('run', '--rm', '--no-deps', 'ca', 'python', '/lab/pki.py', 'recover')
+        self.reload_ocsp()
         self.compose('exec', '-T', 'legitimate', 'nginx', '-t')
         self.compose('exec', '-T', 'legitimate', 'nginx', '-s', 'reload')
         self.switch_dns('legitimate')
         self.ready('legitimate', check_crl=True)
         return output
 
+    def browser(self, bind):
+        """Publish the lab on one host address for a real browser; TLS stays end-to-end."""
+        address = ipaddress.ip_address(bind)
+        published = f'[{address}]' if address.version == 6 else str(address)
+        env_file = self.folder / 'compose.env'
+        lines = [line for line in env_file.read_text(encoding='utf-8').splitlines()
+                 if not line.startswith('LAB_BROWSER_IP=')]
+        atomic_text(env_file, '\n'.join([*lines, f"LAB_BROWSER_IP='{published}'"]) + '\n')
+        self.compose('--profile', 'browser', 'up', '-d', '--no-deps', '--force-recreate', 'browser')
+        return {'hosts_entry': f'{address} {HOST} crl.payroll.test ocsp.payroll.test',
+                'site': f'https://{HOST}/', 'root_certificate': 'http://crl.payroll.test/root.crt',
+                'root_sha256': root_fingerprint(self)}
+
     def logs(self):
-        return self.compose('logs', '--no-color', '--timestamps', 'dns', 'legitimate', 'attacker')
+        return self.compose('--profile', 'browser', 'logs', '--no-color', '--timestamps',
+                            'dns', 'ocsp', 'legitimate', 'attacker', 'browser')
 
     def down(self):
-        return self.compose('down', '--remove-orphans')
+        return self.compose('--profile', 'browser', 'down', '--remove-orphans')
 
 
 def root_fingerprint(deployment):
@@ -166,12 +199,14 @@ def run_lab(*, before_step=None, on_observation=None):
         results = []
 
         def observe(ident, title, expected, explain, service='attacker', trust='root',
-                    hostname=HOST, check=False, code=None, prepare=None):
+                    hostname=HOST, check=False, code=None, prepare=None, ocsp_cert=None):
             if before_step is not None:
                 before_step(len(results) + 1, ident, title, explain)
             if prepare is not None:
                 prepare()
             row = deployment.probe(hostname, trust, check, f'{deployment.run_id}-{ident}')
+            if ocsp_cert is not None:
+                row['ocsp'] = deployment.ocsp(ocsp_cert)
             passed = (row['accepted'] == expected
                       and row['resolved_ip'] == deployment.addresses[service]
                       and row['peer_ip'] == deployment.addresses[service])
@@ -190,7 +225,7 @@ def run_lab(*, before_step=None, on_observation=None):
 
         baseline = observe('baseline', 'Kết nối hợp lệ ban đầu', True,
                            'DNS trỏ đến Nginx hợp lệ; kiểm tra toàn chuỗi và CRL.',
-                           service='legitimate', trust='bundle', check=True)
+                           service='legitimate', trust='bundle', check=True, ocsp_cert='intermediate')
         observe('untrusted', 'Root CA chưa được tin cậy', False,
                 'Client chỉ tin CA không liên quan nên từ chối chuỗi của attacker.',
                 trust='unrelated', prepare=deployment.attack)
@@ -199,21 +234,26 @@ def run_lab(*, before_step=None, on_observation=None):
         observe('hostname', 'Tên miền sai bị từ chối', False,
                 'DNS vẫn dẫn đến attacker nhưng SAN không khớp other.payroll.test.',
                 hostname='other.payroll.test', code=62)
-        observe('revoked', 'Thu hồi CA và bật CRL', False,
-                'Bash thu hồi serial của CA trung gian với lý do CACompromise.',
-                trust='bundle', check=True, code=23,
-                prepare=lambda: atomic_text(deployment.folder / 'revocation.txt', deployment.revoke()))
+        revoked = observe('revoked', 'Thu hồi CA và bật CRL', False,
+                          'Bash thu hồi serial của CA trung gian với lý do CACompromise.',
+                          trust='bundle', check=True, code=23, ocsp_cert='intermediate',
+                          prepare=lambda: atomic_text(deployment.folder / 'revocation.txt', deployment.revoke()))
         unchecked = observe('unchecked', 'Có CRL nhưng không kiểm tra', True,
                             'Cùng bundle và chứng chỉ attacker; client không thực thi CRL.', trust='bundle')
         recovery = observe('recovery', 'Thay CA và cấp lại', True,
                            'CA trung gian mới; root cũ giữ nguyên và CA bị lộ vẫn bị thu hồi.',
-                           service='legitimate', trust='bundle', check=True, prepare=deployment.recover)
+                           service='legitimate', trust='bundle', check=True, prepare=deployment.recover,
+                           ocsp_cert='replacement-intermediate')
         invariants = {
             'distinct_attacker_leaf': baseline['fingerprint'] != forged['fingerprint'],
             'attacker_identity_unchanged': forged['fingerprint'] == unchecked['fingerprint'],
             'new_recovery_leaf': recovery['fingerprint'] not in (baseline['fingerprint'], forged['fingerprint']),
             'replacement_issuer': recovery['issuer'] != baseline['issuer'] and 'Replacement Intermediate CA' in recovery['issuer'],
             'root_unchanged': original_root == root_fingerprint(deployment),
+            'ocsp_good_before_revoke': baseline['ocsp']['cert_status'] == 'GOOD',
+            'ocsp_revoked_after_revoke': (revoked['ocsp']['cert_status'] == 'REVOKED'
+                                          and revoked['ocsp']['revocation_reason'] == 'ca_compromise'),
+            'ocsp_replacement_good': recovery['ocsp']['cert_status'] == 'GOOD',
         }
         output = {'hostname': HOST, 'scope': 'Isolated Docker internal lab; malicious resolver DNS redirection',
                   'issuer': forged['issuer'], 'serial': forged['serial'], 'fingerprint': forged['fingerprint'],
@@ -277,6 +317,12 @@ def print_observation(row):
         f'  HTTP Host: {http_host}',
         f'  Trust: {row["trust"]}',
         f'  CRL: {"bật" if row["crl_enabled"] else "tắt"}',
+    ]
+    if row.get('ocsp'):
+        o = row['ocsp']
+        reason = f' ({o["revocation_reason"]})' if o['revocation_reason'] else ''
+        lines.append(f'  OCSP ({o["certificate"]}): {o["cert_status"]}{reason}')
+    lines += [
         f'  Resolved IP: {observed("resolved_ip")}',
         f'  TCP peer IP: {observed("peer_ip")}',
     ]
@@ -337,13 +383,19 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--self-test', action='store_true',
                       help='run all seven steps unattended and print JSON')
-    mode.add_argument('--action', choices=('setup', 'attack', 'revoke', 'probe', 'recover', 'down'),
+    mode.add_argument('--action', choices=('setup', 'attack', 'revoke', 'probe', 'recover', 'browser', 'ocsp', 'down'),
                       help='perform an individual deployment action and print JSON')
     parser.add_argument('--run-id', help='existing deployment ID for individual actions')
+    parser.add_argument('--bind', help='host address to publish ports 80/443 on for the browser action '
+                                       '(for example your Tailscale IP)')
     parser.add_argument('--check-crl', action='store_true', help='enable CRL checks for the probe action')
+    parser.add_argument('--ocsp-cert', choices=('intermediate', 'replacement-intermediate'), default='intermediate',
+                        help='certificate to query for the ocsp action')
     args = parser.parse_args()
     if args.action and args.action != 'setup' and not args.run_id:
         parser.error('--run-id is required for non-setup actions')
+    if (args.action == 'browser') != bool(args.bind):
+        parser.error('--bind is required for, and only valid with, the browser action')
     if not args.self_test and not args.action and not sys.stdin.isatty():
         parser.error('Interactive mode requires a terminal; use --self-test for unattended JSON execution.')
     try:
@@ -357,6 +409,10 @@ def main():
                 output = {'run_id': deployment.run_id, 'folder': str(deployment.folder)}
             elif args.action == 'probe':
                 output = deployment.probe(check_crl=args.check_crl)
+            elif args.action == 'ocsp':
+                output = deployment.ocsp(args.ocsp_cert)
+            elif args.action == 'browser':
+                output = deployment.browser(args.bind)
             else:
                 output = run_interruptibly(deployment, args.action)
             print(json.dumps(output, ensure_ascii=False, indent=2))
