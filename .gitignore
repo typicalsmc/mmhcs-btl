@@ -1,3 +1,4 @@
 runs/
+.lab-ca/
 __pycache__/
 *.log

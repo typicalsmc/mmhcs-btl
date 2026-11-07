@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PKI Lab — Trình diễn Chrome</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <script type="module" src="dashboard.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="dashboard.html"><span class="brand-icon" aria-hidden="true">↗</span><span>PKI <b>LAB</b><small>CHROME · CHỨNG CỨ THẬT</small></span></a>
+    <div class="session-meta"><span id="connection-status" class="pill">Chưa kết nối</span><span id="run-status" class="pill subtle">Chưa có phiên</span></div>
+    <button id="settings-toggle" class="secondary" aria-expanded="true" aria-controls="settings">Kết nối & Windows</button>
+  </header>
+  <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+  <section id="settings" class="settings" aria-labelledby="settings-title">
+    <div class="settings-heading"><div><span class="eyebrow">01 / GHÉP NỐI RIÊNG TƯ</span><h2 id="settings-title">Điều khiển qua tunnel SSH</h2></div><span class="privacy-note">Token chỉ lưu cục bộ trong extension</span></div>
+    <p>Chỉ dùng VM/tài khoản Windows demo. Root trust và chính sách Chrome ảnh hưởng toàn máy/tài khoản, không chỉ profile. Lưu công việc trước khi thoát Chrome. Incognito không cô lập trust hay cache thu hồi.</p>
+    <div class="pairing-grid"><label>Control URL<input id="control-url" value="http://127.0.0.1:8765" readonly></label><label>Pairing token<input id="pairing-token" type="password" autocomplete="off" spellcheck="false" placeholder="Dán token từ console máy Docker"></label><div class="pairing-actions"><button id="connect">Kết nối</button><button id="disconnect" class="secondary">Ngắt kết nối</button><button id="forget" class="text-button">Quên token</button></div></div>
+    <p class="micro">ID extension: <code id="extension-id"></code> · Quên/ngắt kết nối không dừng Docker. Mở lại dashboard chỉ đọc trạng thái; không tự Start hay chạy lại bước.</p>
+    <details id="commands-details"><summary>Lệnh Windows, fingerprint & khôi phục cấu hình <span id="commands-hint">— có dữ liệu sau Start</span></summary><div id="fingerprints" class="fingerprints"></div><div id="windows-commands" class="commands"></div></details>
+  </section>
+  <main class="presenter">
+    <aside class="rail-panel" aria-label="Bảy bước trình diễn"><div class="rail-heading"><span class="eyebrow">KỊCH BẢN / 7 BƯỚC</span><span id="progress-label">0 / 7</span></div><nav id="step-rail"></nav><div class="rail-note"><strong>Không mô phỏng TLS</strong><p>Mỗi lần mở là một tab Chrome thật. Tham chiếu OpenSSL không phải quyết định của Chrome.</p></div><div id="session-info" class="session-info"></div></aside>
+    <section class="stage" aria-labelledby="step-title">
+      <div class="stage-head"><span id="step-counter" class="eyebrow">CHỌN BƯỚC TRÌNH DIỄN</span><span id="step-phase" class="pill subtle">Chờ ghép nối</span></div>
+      <h1 id="step-title">Nhìn thấy HTTPS.<br>Hiểu đúng niềm tin.</h1>
+      <p id="step-meaning" class="meaning">Ghép nối với controller, Start một phiên mới rồi cấu hình Windows theo checklist. Bằng chứng Chrome thực tế luôn được tách khỏi tham chiếu Python/OpenSSL.</p>
+      <div class="explain-grid"><section class="instruction"><h3>Thao tác lab</h3><p id="lab-action">Controller chưa tạo deployment. Không có thao tác Docker khi chỉ mở dashboard.</p></section><section class="expected"><h3>Kết quả mong đợi <span>không phải quan sát</span></h3><p id="expected-result">Chưa chọn bước</p></section></div>
+      <section class="checklist-panel"><div class="section-heading"><h2>Bạn cần cấu hình Chrome</h2><button id="reset-checklist" class="text-button" disabled>Đã đổi cấu hình? Đặt lại</button></div><p class="micro">Xác nhận thủ công sau khi kiểm tra trust, hosts và chrome://policy. Extension không đọc hay thay đổi cấu hình Windows.</p><div id="checklist" class="checklist"></div></section>
+      <section class="talking-point"><h3>Điểm cần giải thích</h3><p id="talking-point">Không vượt cảnh báo chứng chỉ. Lỗi mạng chung hoặc không thấy event không được xem là một lần từ chối chứng chỉ thành công.</p></section>
+      <div class="evidence-grid">
+        <section class="evidence-card browser-card" aria-labelledby="chrome-title"><div class="evidence-heading"><div><span class="eyebrow">QUAN SÁT TRÌNH DUYỆT</span><h2 id="chrome-title">Chrome thực tế</h2></div><span id="chrome-verdict" class="pill subtle">Chưa quan sát</span></div><p class="micro">Sự kiện do extension tin cậy báo cáo, không phải chứng thực mật mã. Chỉ webRequest mới là kết quả điều hướng Chrome; lifecycle không kết luận TLS.</p><div id="chrome-evidence"></div></section>
+        <section class="evidence-card reference-card" aria-labelledby="reference-title"><div class="evidence-heading"><div><span class="eyebrow">PYTHON / OPENSSL · RIÊNG BIỆT</span><h2 id="reference-title">Tham chiếu OpenSSL</h2></div><span id="reference-verdict" class="pill subtle">Chưa chuẩn bị</span></div><p class="micro">Fingerprint, issuer và OCSP bên dưới chỉ thuộc probe OpenSSL. Xem chuỗi Chrome bằng trình xem chứng chỉ của Chrome; WebRequest không cung cấp các chi tiết đó.</p><div id="reference-evidence"></div></section>
+      </div>
+      <section id="mismatch-panel" class="mismatch-panel" hidden><h2>Sai khác Chrome đã được giữ nguyên</h2><p>Kiểm tra bản sao Root trong hai kho, nguồn policy ưu tiên, hosts/IP, kết nối 80/443, thời hạn chứng chỉ và cache. Thoát toàn bộ Chrome, dùng profile mới đúng giai đoạn rồi Reobserve; không chạy lại revoke/recovery, không cấp lại chứng chỉ attacker, không bỏ xác minh TLS.</p><button id="acknowledge" class="warning-button">Tiếp tục với sai khác đã ghi nhận</button><p id="acknowledge-state" class="micro"></p></section>
+      <section id="completion" class="completion" hidden><h2>Đã ghi nhận bước cuối</h2><p id="completion-text"></p><p>Website cuối vẫn hoạt động cho tới Stop. Giữ nguyên tab để trình bày; Stop chỉ dừng deployment của phiên này.</p></section>
+      <section id="restoration" class="restoration" hidden><h2>Khôi phục Windows thủ công</h2><p>Gỡ đúng dòng hosts đã thêm. Khôi phục từng DWORD policy về giá trị ban đầu, hoặc chỉ xóa giá trị vốn không tồn tại. Khôi phục trạng thái tin Root lab trước demo. Không xóa .lab-ca hay profile không liên quan. Xem lệnh trong “Kết nối & Windows”.</p></section>
+    </section>
+  </main>
+  <footer class="controlbar"><div class="control-context"><strong id="control-caption">Sẵn sàng ghép nối</strong><span id="control-help">Không có thao tác triển khai tự động.</span></div><div class="controls"><button id="start" disabled>Start</button><button id="prepare" disabled>Chuẩn bị bước</button><button id="open-chrome" disabled>Mở trong Chrome ↗</button><button id="reobserve" class="secondary" disabled>Reobserve</button><button id="next" class="secondary" disabled>Next →</button><button id="stop" class="danger" disabled>Stop</button></div></footer>
+</body>
+</html>

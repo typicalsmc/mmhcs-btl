@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "PKI Lab — Trình diễn Chrome",
+  "version": "1.0.0",
+  "minimum_chrome_version": "102",
+  "description": "Trình diễn bảy bước PKI bằng điều hướng Chrome thật, tách biệt với tham chiếu OpenSSL.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAstmcEAlKuckTQJ6Sr6BwhBjFGC76DuUD4fFd6uPxfW5F38SjVeh0VJxSkXxPhasRdk4qRoy1PWow4sgxbynPsyJkvTXKGq2X7UZotKlEv/IGg9p/mBGF/xUoBHgLjuD0xgsDA0b/TQfjL3ons0ahqk4A8pjc2UGJo5WrdLwyYTc7M+PeDq5HFPqNeQUuC8td2meofd6yd5VcCt4bNkWZYyJQ4o50VenVDvc/3mPGocieYm6VPPJXH9yQ4nX6TxDEsmz5tTonVMAWyDPDR1jfHUZ/znsBkhraYTmZbuwSyEN5yLorKAAHTcwTQrqv/c2xemDOib0rWtD2N7knzONAhQIDAQAB",
+  "permissions": ["storage", "webRequest"],
+  "host_permissions": ["http://127.0.0.1/*", "https://login.payroll.test/*", "https://other.payroll.test/*"],
+  "background": {"service_worker": "background.js", "type": "module"},
+  "action": {"default_title": "Mở bảng trình diễn PKI"},
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://127.0.0.1:8765"}
+}

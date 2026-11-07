@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import fcntl
 import os
 from pathlib import Path
 import subprocess
@@ -20,6 +21,7 @@ CRL_BASE = "http://crl.payroll.test"
 OCSP_URL = "http://ocsp.payroll.test"
 OCSP = Path("/ocsp")
 CA_PRIVATE = Path("/ca-private")
+ROOT_CA = Path("/root-ca")
 PUBLIC = Path("/public")
 LEGITIMATE = Path("/legitimate")
 LEAK = Path("/leak")
@@ -34,7 +36,7 @@ def name(cn):
 
 
 def cert(cn, subject_key, issuer_cert=None, issuer_key=None, ca=False, path=None, crl_url=None, ocsp_url=None,
-         responder=False):
+         responder=False, days=30):
     now = dt.datetime.now(dt.timezone.utc)
     subject = name(cn)
     builder = (
@@ -44,7 +46,8 @@ def cert(cn, subject_key, issuer_cert=None, issuer_key=None, ca=False, path=None
         .public_key(subject_key.public_key())
         .serial_number(x509.random_serial_number())
         .not_valid_before(now - dt.timedelta(minutes=5))
-        .not_valid_after(now + dt.timedelta(days=30))
+        .not_valid_after(min(now + dt.timedelta(days=days), issuer_cert.not_valid_after_utc)
+                         if issuer_cert else now + dt.timedelta(days=days))
         .add_extension(x509.BasicConstraints(ca=ca, path_length=path), critical=True)
         .add_extension(
             x509.KeyUsage(
@@ -151,6 +154,37 @@ def load_key(path):
     return serialization.load_pem_private_key(path.read_bytes(), password=None)
 
 
+def persistent_root():
+    """Serialize first initialization; never silently replace an existing trust anchor."""
+    if not ROOT_CA.is_dir():
+        raise RuntimeError(f"Required bind-mounted directory is missing: {ROOT_CA}")
+    ROOT_CA.chmod(0o700)
+    with (ROOT_CA / ".lock").open("a+b") as lock:
+        os.fchmod(lock.fileno(), 0o600)
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        certificate_path = ROOT_CA / "root.crt"
+        key_path = ROOT_CA / "root.key"
+        if not certificate_path.exists() and not key_path.exists():
+            root_key = key()
+            root = cert("Lab Root CA", root_key, ca=True, path=1, days=3650)
+            save_key(key_path, root_key)
+            write_atomic(certificate_path, pem(root))
+        root = load_certificate(certificate_path)
+        root_key = load_key(key_path)
+        if root.public_key().public_numbers() != root_key.public_key().public_numbers():
+            raise RuntimeError("Persistent root certificate and private key do not match")
+        root.verify_directly_issued_by(root)
+        constraints = root.extensions.get_extension_for_class(x509.BasicConstraints).value
+        usage = root.extensions.get_extension_for_class(x509.KeyUsage).value
+        if not constraints.ca or constraints.path_length != 1 or not usage.key_cert_sign or not usage.crl_sign:
+            raise RuntimeError("Persistent root is not a lab signing CA")
+        now = dt.datetime.now(dt.timezone.utc)
+        if not root.not_valid_before_utc <= now < root.not_valid_after_utc:
+            raise RuntimeError("Persistent root is not currently valid; explicitly rotate it and update browser trust")
+        key_path.chmod(0o600)
+        return root, root_key
+
+
 def publish_trust():
     """Publish public revocation data: DER CRLs, the client trust bundle, and the OCSP responder index."""
     required = (
@@ -184,8 +218,7 @@ def init():
         raise RuntimeError("Public, legitimate, leak, and OCSP directories must be empty for initialization")
     CA_PRIVATE.chmod(0o700)
 
-    root_key = key()
-    root = cert("Lab Root CA", root_key, ca=True, path=1)
+    root, root_key = persistent_root()
     intermediate_key = key()
     intermediate = cert("Lab Intermediate CA", intermediate_key, root, root_key, True, 0,
                         f"{CRL_BASE}/root.crl", ocsp_url=OCSP_URL)

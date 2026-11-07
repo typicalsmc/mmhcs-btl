@@ -8,6 +8,10 @@ services:
     command: [python, /lab/pki.py, init]
     volumes:
       - type: bind
+        source: ./.lab-ca
+        target: /root-ca
+        bind: {create_host_path: false}
+      - type: bind
         source: ${LAB_RUN_DIR}/ca-private
         target: /ca-private
         bind: {create_host_path: false}

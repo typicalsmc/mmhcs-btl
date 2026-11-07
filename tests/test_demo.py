@@ -1,3 +1,5 @@
+import pathlib
+import subprocess
 import sys
 import unittest
 
@@ -22,6 +24,23 @@ class ExecuteTests(unittest.TestCase):
         self.assertIn('exited 7', str(failure.exception))
         self.assertIn(stdout, str(failure.exception))
         self.assertIn(stderr, str(failure.exception))
+
+
+class CliTests(unittest.TestCase):
+    def test_invalid_bind(self):
+        self.assert_cli_error('--bind', 'not-an-ip')
+
+    def test_unattended_browser_mode_rejected(self):
+        self.assert_cli_error('--self-test', '--bind', '127.0.0.1')
+
+    def test_interactive_requires_terminal(self):
+        self.assert_cli_error('--bind', '127.0.0.1')
+
+    def assert_cli_error(self, *arguments):
+        result = subprocess.run(
+            [sys.executable, str(pathlib.Path(__file__).resolve().parents[1] / 'demo.py'), *arguments],
+            stdin=subprocess.DEVNULL, capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 2, result.stderr.decode('utf-8'))
 
 
 if __name__ == '__main__':
